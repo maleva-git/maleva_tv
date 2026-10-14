@@ -330,7 +330,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             key == LogicalKeyboardKey.gameButtonA ||
             key == LogicalKeyboardKey.mediaPlayPause ||
             key == LogicalKeyboardKey.mediaPlay)) {
-      _auto ? _takeControl() : _resumeAuto();
+      if (_auto && ref.read(boardProvider) == BoardKind.planning) {
+        // Planning: OK starts or stops the scrolling
+        ref.read(planningScrollProvider.notifier).toggle();
+      } else {
+        _auto ? _takeControl() : _resumeAuto();
+      }
       return KeyEventResult.handled;
     }
     if (event is KeyDownEvent && (key == LogicalKeyboardKey.mediaPause || key == LogicalKeyboardKey.mediaStop)) {
@@ -358,6 +363,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         // each board's own filter: the port on Vessel Planning, the plan on Planning
         const SizedBox(width: 10),
         board == BoardKind.vesselPlanning ? _portChip() : _planChip(),
+        if (board == BoardKind.planning) ...[const SizedBox(width: 10), _scrollButton()],
       ],
     );
     return PopScope(
@@ -383,8 +389,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                     date: ref.watch(dateProvider),
                     onChangeDate: _changeDate,
                     jobs: ref.watch(planningJobsProvider),
-                    // Planning stands still (the owner's choice, 2026-10-14); ▲▼ and the page keys move it.
-                    autoPlay: false,
+                    // Planning scrolls only when started with START SCROLL (or OK); ▲▼ and the page keys move it.
+                    autoPlay: _auto && ref.watch(planningScrollProvider),
                     selectedIndex: _selected,
                     controls: controls,
                     search: search,
@@ -644,6 +650,56 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     );
   }
 
+  /// Planning only: START SCROLL / STOP SCROLL. Starting also leaves the remote's row, so it scrolls at once.
+  Widget _scrollButton() {
+    final on = ref.watch(planningScrollProvider);
+    final color = on ? BoardTheme.danger : BoardTheme.success;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        canRequestFocus: false,
+        borderRadius: BorderRadius.circular(12),
+        onTap: () {
+          ref.read(planningScrollProvider.notifier).toggle();
+          if (!on && !_auto && !_searching) _resumeAuto();
+          _focus.requestFocus();
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 42,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.16),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color, width: 1.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(on ? Icons.stop_circle_rounded : Icons.play_circle_fill_rounded, size: 22, color: color),
+              const SizedBox(width: 8),
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(on ? 'SCROLLING' : 'SCROLL OFF',
+                      style: TextStyle(
+                          fontSize: 9, fontWeight: FontWeight.w800, color: BoardTheme.textMuted, letterSpacing: 1.4)),
+                  Text(on ? 'STOP SCROLL' : 'START SCROLL',
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          color: BoardTheme.textPrimary,
+                          letterSpacing: 0.8)),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   /// LIVE: plan saves reload the board at once. Otherwise it still refreshes every minute.
   Widget _livePill() {
     final status = ref.watch(liveStatusProvider);
@@ -774,7 +830,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final IconData icon;
     final String text;
     if (_auto) {
-      final still = ref.watch(boardProvider) == BoardKind.planning;
+      final still = ref.watch(boardProvider) == BoardKind.planning && !ref.watch(planningScrollProvider);
       color = BoardTheme.success;
       icon = still ? Icons.pan_tool_alt_rounded : Icons.play_circle_rounded;
       text = still ? 'AUTO · SCROLL OFF' : 'AUTO · SCROLLING';
@@ -846,8 +902,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       if (ref.watch(boardProvider) == BoardKind.planning)
         key(const Icon(Icons.circle, size: 10, color: Color(0xFFEF4444)), 'RED: TRUCKS'),
       key(const Icon(Icons.circle, size: 10, color: Color(0xFFFACC15)), 'YELLOW: BOARD'),
-      key(Text('OK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
-          _auto ? 'PAUSE' : 'BACK TO AUTO'),
+      key(
+          Text('OK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
+          !_auto
+              ? 'BACK TO AUTO'
+              : ref.watch(boardProvider) == BoardKind.planning
+                  ? (ref.watch(planningScrollProvider) ? 'STOP SCROLL' : 'START SCROLL')
+                  : 'PAUSE'),
     ];
   }
 }

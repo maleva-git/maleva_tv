@@ -151,9 +151,18 @@ void main() {
     expect(find.text('WXY 1234'), findsOneWidget);
     expect(c.read(boardProvider), BoardKind.planning);
     expect(find.text('ALL PORTS'), findsNothing); // no port filter on Planning
-    // Planning stands still; Vessel Planning scrolls
-    expect(tester.widget<PlanningBoardView>(find.byType(PlanningBoardView)).autoPlay, isFalse);
+    // Planning stands still until START SCROLL (or OK); STOP SCROLL stops it again
+    PlanningBoardView planning() => tester.widget<PlanningBoardView>(find.byType(PlanningBoardView));
+    expect(planning().autoPlay, isFalse);
     expect(find.text('AUTO · SCROLL OFF'), findsOneWidget);
+    await tester.tap(find.text('START SCROLL').first); // the button (the footer has the OK hint)
+    await settle();
+    expect(planning().autoPlay, isTrue);
+    expect(find.text('STOP SCROLL'), findsWidgets);
+    await tester.sendKeyEvent(LogicalKeyboardKey.select); // OK on the remote
+    await settle();
+    expect(planning().autoPlay, isFalse);
+    expect(find.text('START SCROLL'), findsWidgets);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await settle();

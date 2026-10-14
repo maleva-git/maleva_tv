@@ -73,3 +73,4 @@
 - [x] 7.17 Driver column shows the name only (initials badge removed); truck column shows a truck icon before the truck name (lighter for the same truck's next job). Owner's request 2026-10-14.
 - [x] 7.18 Planning uses Vessel Planning's navy colours (owner's request 2026-10-14): one look for both boards. `BoardPalette.malevaLight` stays in the code, unused by the boards.
 - [x] 7.19 Planning auto-scroll off (owner's request 2026-10-14): the board stands still, ▲▼ / CH± / page keys move it; footer shows "AUTO · SCROLL OFF". Vessel Planning keeps scrolling. Verify: `test/features/planning/planning_test.dart`.
+- [x] 7.20 Planning START SCROLL / STOP SCROLL button beside PLAN (owner's request 2026-10-14): green START starts the slow auto-scroll, red STOP stops it; OK on the remote does the same; kept on the device (`tv.planningScroll`, off by default). Vessel Planning unchanged. Verify: `test/features/planning/planning_test.dart`.

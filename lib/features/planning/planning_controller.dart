@@ -30,6 +30,29 @@ class PlanChoiceController extends StateNotifier<int?> {
 final planChoiceProvider =
     StateNotifierProvider<PlanChoiceController, int?>((ref) => PlanChoiceController(ref.watch(portStorageProvider)));
 
+/// Whether the Planning board scrolls by itself: off unless started with the START SCROLL button (or
+/// OK on the remote). Kept on the device, like the plan.
+class PlanningScrollController extends StateNotifier<bool> {
+  PlanningScrollController(this._storage) : super(false) {
+    _storage.read(key: _key).then((saved) {
+      if (mounted && saved != null) state = saved == 'on';
+    }).catchError((_) {});
+  }
+
+  static const _key = 'tv.planningScroll';
+  final FlutterSecureStorage _storage;
+
+  void toggle() => set(!state);
+
+  void set(bool on) {
+    state = on;
+    _storage.write(key: _key, value: on ? 'on' : 'off').catchError((_) {});
+  }
+}
+
+final planningScrollProvider = StateNotifierProvider<PlanningScrollController, bool>(
+    (ref) => PlanningScrollController(ref.watch(portStorageProvider)));
+
 /// The selected day's plans (`salemaster`), for the plan list.
 final dayPlansProvider = FutureProvider<List<PlanSummary>>((ref) async {
   final day =
