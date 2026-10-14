@@ -114,9 +114,9 @@ class PlanningColumnHeaders extends StatelessWidget {
   }
 }
 
-/// One planned job on one row. The truck is a number-plate badge with its full name, the driver a
-/// large name with initials, so both read from across the room. A truck's next job straight after
-/// its previous one shows the plate outlined only.
+/// One planned job on one row. The truck is its full name in large blue letters, the driver a large
+/// name with initials, so both read from across the room. A truck's next job straight after its
+/// previous one shows the name lighter.
 class PlanningRow extends StatelessWidget {
   const PlanningRow({
     required this.job,
@@ -197,90 +197,34 @@ class PlanningRow extends StatelessWidget {
         ),
       );
 
-  /// The number plate: the full truck name, never cut - a long one shrinks to fit instead.
+  /// Only the truck name: large, full (a long name shrinks to fit, never cut), on the column's soft blue
+  /// tint. The truck's next job straight after shows the name lighter.
   Widget _truck() {
-    if (job.truck.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: BoardTheme.warning.withValues(alpha: 0.6), width: 1.5),
-              color: BoardTheme.warning.withValues(alpha: 0.08),
-            ),
-            child: Text('NO TRUCK YET',
-                style:
-                    TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: BoardTheme.warning, letterSpacing: 1)),
-          ),
-        ),
-      );
-    }
+    final none = job.truck.isEmpty;
     final repeat = !job.firstOfTruck;
-    final ink = repeat ? BoardTheme.textSecondary : Colors.white;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Flexible(
-            child: FittedBox(
+    return Container(
+      color: BoardTheme.accent.withValues(alpha: BoardTheme.palette.isLight ? 0.08 : 0.16),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      alignment: Alignment.centerLeft,
+      child: none
+          ? Text('NO TRUCK YET',
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: BoardTheme.warning, letterSpacing: 1))
+          : FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: repeat
-                    ? BoxDecoration(
-                        borderRadius: BorderRadius.circular(9),
-                        border: Border.all(color: BoardTheme.border, width: 2),
-                      )
-                    : BoxDecoration(
-                        // a raised plate: light from the top, a soft shadow under it
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Color.lerp(BoardTheme.accent, Colors.white, 0.18)!, BoardTheme.accent],
-                        ),
-                        borderRadius: BorderRadius.circular(9),
-                        border: Border.all(color: Color.lerp(BoardTheme.accent, Colors.black, 0.25)!, width: 1.5),
-                        boxShadow: [
-                          BoxShadow(
-                              color: BoardTheme.accent.withValues(alpha: 0.35),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3)),
-                        ],
-                      ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.local_shipping_rounded, size: 20, color: repeat ? BoardTheme.textMuted : Colors.white),
-                    const SizedBox(width: 8),
-                    Text.rich(
-                      _marked(
-                        job.truck.toUpperCase(),
-                        TextStyle(
-                            fontSize: 21, fontWeight: FontWeight.w900, color: ink, letterSpacing: 1.2, height: 1.1),
-                      ),
-                      maxLines: 1,
-                    ),
-                  ],
+              child: Text.rich(
+                _marked(
+                  job.truck.toUpperCase(),
+                  TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1,
+                    color: repeat ? BoardTheme.textMuted : BoardTheme.accent,
+                  ),
                 ),
+                maxLines: 1,
               ),
             ),
-          ),
-          if (job.truckSize.isNotEmpty) ...[
-            const SizedBox(height: 3),
-            Text(job.truckSize.toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                    fontSize: 11, fontWeight: FontWeight.w800, color: BoardTheme.textMuted, letterSpacing: 1)),
-          ],
-        ],
-      ),
     );
   }
 
