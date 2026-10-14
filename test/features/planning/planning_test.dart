@@ -82,17 +82,29 @@ void main() {
       return c;
     }
 
-    test('are grouped by truck (A-Z, no truck last), by pickup inside a truck', () async {
+    test('keep the order the web shows: as saved, S.NO 1, 2, 3 ... (no re-sorting)', () async {
       final c = container([
         _row(1, 'TRUCK B', '2026-10-14 10:00'),
         _row(2, '', '2026-10-14 07:00'),
         _row(3, 'TRUCK A', '2026-10-14 12:00'),
-        _row(4, 'TRUCK B', '2026-10-14 08:00'),
+        _row(4, 'TRUCK A', '2026-10-14 08:00'),
       ]);
       final jobs = await c.read(planningJobsProvider.future);
 
-      expect(jobs.map((j) => j.id), [3, 4, 1, 2]);
-      expect(jobs.map((j) => j.firstOfTruck), [true, true, false, true]);
+      expect(jobs.map((j) => j.id), [1, 2, 3, 4]);
+      // TRUCK A's second job right after its first shows the truck dimmed
+      expect(jobs.map((j) => j.firstOfTruck), [true, true, true, false]);
+    });
+
+    test('all plans of the day go plan by plan (the web plan list order), each in its own order', () {
+      const plans = [PlanSummary(number: 811, id: 21), PlanSummary(number: 810, id: 20)];
+      final jobs = [
+        const PlanningJob(id: 1, jobNo: 'A', planId: 20),
+        const PlanningJob(id: 2, jobNo: 'B', planId: 21),
+        const PlanningJob(id: 3, jobNo: 'C', planId: 20),
+        const PlanningJob(id: 4, jobNo: 'D', planId: 21),
+      ];
+      expect(inPlanOrder(plans, jobs).map((j) => j.id), [2, 4, 1, 3]);
     });
 
     test('follow the search, but not Vessel Planning\'s port filter', () async {

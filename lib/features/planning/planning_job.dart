@@ -17,6 +17,7 @@ class PlanningJob {
     this.port,
     this.offPort,
     this.sortBy = 0,
+    this.planId = 0,
     this.firstOfTruck = true,
   });
 
@@ -50,6 +51,9 @@ class PlanningJob {
   /// The plan's own order (`SortBy`).
   final int sortBy;
 
+  /// The plan the job belongs to (`PLANINGMasterRefId`), for "all plans of the day".
+  final int planId;
+
   /// The first row of its truck's group on the board (the truck name is shown in full there).
   final bool firstOfTruck;
 
@@ -69,6 +73,7 @@ class PlanningJob {
         port: port,
         offPort: offPort,
         sortBy: sortBy,
+        planId: planId,
         firstOfTruck: first,
       );
 
@@ -91,6 +96,7 @@ class PlanningJob {
       port: text('SPort'),
       offPort: text('OPort'),
       sortBy: int.tryParse('${json['SortBy']}') ?? 0,
+      planId: int.tryParse('${json['PLANINGMasterRefId'] ?? ''}') ?? 0,
     );
   }
 }
@@ -99,6 +105,7 @@ class PlanningJob {
 class PlanSummary {
   const PlanSummary({
     required this.number,
+    this.id = 0,
     this.display = '',
     this.date = '',
     this.employee = '',
@@ -108,6 +115,9 @@ class PlanSummary {
 
   /// The plan number (`PLANINGNo` / `CNumber`), what the web's PLAN NO field takes.
   final int number;
+
+  /// The plan's record id (`Id`), what its jobs point to (`PLANINGMasterRefId`).
+  final int id;
 
   /// `PLANINGNoDisplay` / `CNumberDisplay`, e.g. "810".
   final String display;
@@ -124,6 +134,7 @@ class PlanSummary {
     String text(String key) => json[key]?.toString().trim() ?? '';
     return PlanSummary(
       number: int.tryParse(text('PLANINGNo')) ?? 0,
+      id: int.tryParse(text('Id')) ?? 0,
       display: text('PLANINGNoDisplay').isNotEmpty ? text('PLANINGNoDisplay') : text('CNumberDisplay'),
       date: text('PLANINGDate').isNotEmpty ? text('PLANINGDate') : text('SSaleDate'),
       employee: text('EmployeeName'),

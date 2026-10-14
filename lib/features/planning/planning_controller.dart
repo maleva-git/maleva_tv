@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:maleva_tv/core/providers.dart';
-import 'package:maleva_tv/features/board/board_theme.dart';
 import 'package:maleva_tv/features/home/presentation/home_controller.dart';
 import 'planning_api.dart';
 import 'planning_job.dart';
@@ -47,29 +46,35 @@ final shownPlanningProvider = FutureProvider<({PlanSummary? plan, List<PlanningJ
     final one = await api.plan(companyId: companyId, planningNo: planningNo);
     return (plan: one.plan, jobs: one.jobs);
   }
-  return (plan: null, jobs: await api.dayPlan(companyId: companyId, date: ref.watch(dateProvider)));
+  final day = await api.day(companyId: companyId, date: ref.watch(dateProvider));
+  return (plan: null, jobs: inPlanOrder(day.plans, day.jobs));
 });
 
-/// The Planning board's rows: the shown plan(s) with the search applied, then grouped by truck
-/// (A-Z, trucks not yet given last) and by pickup time inside each truck.
+/// The Planning board's rows, in the order the web shows them: a plan's jobs top to bottom as the plan
+/// was saved (S.NO 1, 2, 3 ... as on the web's plan page); for "all plans of the day", plan by plan in
+/// the web plan list's order, each plan in its own order. The search only hides rows.
 /// Planning is its own board: Vessel Planning's port filter does not apply here.
 final planningJobsProvider = FutureProvider<List<PlanningJob>>((ref) async {
   final query = ref.watch(searchProvider).trim();
   final jobs = (await ref.watch(shownPlanningProvider.future)).jobs;
-  final shown = jobs.where((j) => query.isEmpty || matchesPlanning(j, query)).toList()..sort(_byTruckThenPickup);
+  final shown = jobs.where((j) => query.isEmpty || matchesPlanning(j, query)).toList();
+  // A truck's next job straight after its previous one shows the truck dimmed.
   return [
-    for (var i = 0; i < shown.length; i++) shown[i].withFirstOfTruck(i == 0 || shown[i].truck != shown[i - 1].truck),
+    for (var i = 0; i < shown.length; i++)
+      shown[i].withFirstOfTruck(i == 0 || shown[i].truck.isEmpty || shown[i].truck != shown[i - 1].truck),
   ];
 });
 
-int _byTruckThenPickup(PlanningJob a, PlanningJob b) {
-  if (a.truck.isEmpty != b.truck.isEmpty) return a.truck.isEmpty ? 1 : -1;
-  final byTruck = a.truck.toUpperCase().compareTo(b.truck.toUpperCase());
-  if (byTruck != 0) return byTruck;
-  final pa = BoardTheme.parseDateTime(a.pickup), pb = BoardTheme.parseDateTime(b.pickup);
-  if (pa != null && pb != null && pa != pb) return pa.compareTo(pb);
-  if ((pa == null) != (pb == null)) return pa == null ? 1 : -1;
-  return a.sortBy.compareTo(b.sortBy);
+/// "All plans of the day": the plans in the server's order (newest first, as the web's plan list)
+/// and each plan's jobs in the server's order (`SortBy`, then saved order).
+List<PlanningJob> inPlanOrder(List<PlanSummary> plans, List<PlanningJob> jobs) {
+  final rank = {for (final (i, p) in plans.indexed) p.id: i};
+  final indexed = jobs.indexed.toList()
+    ..sort((a, b) {
+      final ra = rank[a.$2.planId] ?? plans.length, rb = rank[b.$2.planId] ?? plans.length;
+      return ra != rb ? ra.compareTo(rb) : a.$1.compareTo(b.$1);
+    });
+  return [for (final e in indexed) e.$2];
 }
 
 /// A planned job matches when its truck, driver, vessel, job number or customer contains every
