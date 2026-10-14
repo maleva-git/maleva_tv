@@ -25,7 +25,9 @@ class PlanningBoardView extends StatelessWidget {
     required this.date,
     required this.onChangeDate,
     required this.jobs,
-    this.scrollStep = 0.5,
+    // Very slow (the owner's choice for Planning): about 4.5 px a second, one row every ~15 s,
+    // holding 10 s at the top and bottom. Vessel Planning keeps its own speed.
+    this.scrollStep = 0.15,
     this.autoPlay = true,
     this.selectedIndex,
     this.controls,
@@ -57,6 +59,7 @@ class PlanningBoardView extends StatelessWidget {
       onChangeDate: onChangeDate,
       jobs: jobs,
       scrollStep: scrollStep,
+      edgePause: const Duration(seconds: 10),
       autoPlay: autoPlay,
       selectedIndex: selectedIndex,
       controls: controls,

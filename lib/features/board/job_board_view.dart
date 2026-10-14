@@ -31,6 +31,7 @@ class BoardView<T> extends StatefulWidget {
     this.titleWidget,
     this.noMatchTitle = 'Nothing matches',
     this.belowTitle,
+    this.edgePause = const Duration(seconds: 4),
     super.key,
   });
 
@@ -70,6 +71,9 @@ class BoardView<T> extends StatefulWidget {
   /// A bar between the title bar and the grid, e.g. Planning's truck summary.
   final Widget? belowTitle;
 
+  /// How long auto-scroll holds at the top and at the bottom of the list.
+  final Duration edgePause;
+
   @override
   State<BoardView<T>> createState() => _BoardViewState<T>();
 }
@@ -82,7 +86,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
   DateTime? _updatedAt;
   DateTime? _pauseUntil;
 
-  static const _edgePause = Duration(seconds: 4);
+  Duration get _edgePause => widget.edgePause;
 
   /// One row of [JobBoardItem], grid line included.
   static const _rowHeight = 68.0;
