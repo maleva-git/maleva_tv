@@ -23,7 +23,7 @@ class BoardTheme {
   /// Column layout, in display order. `snoWidth` is fixed; the rest are flex values.
   static const snoWidth = 64.0;
   static const vessel = 5;
-  static const port = 3;
+  static const port = 5;
   static const jobNo = 3;
   static const employee = 4;
   static const status = 4;

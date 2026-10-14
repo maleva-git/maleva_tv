@@ -173,7 +173,7 @@ class JobBoardItem extends StatelessWidget {
             if (lines.length > 1) ...[
               Text(side,
                   style: TextStyle(
-                      fontSize: 11,
+                      fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: side == 'L' ? BoardTheme.accent : BoardTheme.offVessel)),
               const SizedBox(width: 6),
@@ -184,19 +184,19 @@ class JobBoardItem extends StatelessWidget {
                 maxLines: lines.length > 1 ? 1 : 2,
                 overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
-                    fontSize: 14, fontWeight: FontWeight.w700, color: BoardTheme.textPrimary, height: 1.15),
+                    fontSize: 20, fontWeight: FontWeight.w700, color: BoardTheme.textPrimary, height: 1.05),
               ),
             ),
           ],
         );
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (var i = 0; i < lines.length; i++) ...[
-            if (i > 0) const SizedBox(height: 3),
+            if (i > 0) const SizedBox(height: 2),
             line(lines[i].$1, lines[i].$2),
           ],
         ],
