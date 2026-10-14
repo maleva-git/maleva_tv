@@ -88,3 +88,41 @@ class PlanningJob {
     );
   }
 }
+
+/// One saved plan: a `salemaster` row of select-planning, or the header of `GET /api/planing/edit`.
+class PlanSummary {
+  const PlanSummary({
+    required this.number,
+    this.display = '',
+    this.date = '',
+    this.employee = '',
+    this.totalOrders = 0,
+    this.remarks = '',
+  });
+
+  /// The plan number (`PLANINGNo` / `CNumber`), what the web's PLAN NO field takes.
+  final int number;
+
+  /// `PLANINGNoDisplay` / `CNumberDisplay`, e.g. "810".
+  final String display;
+
+  /// The plan date as the server wrote it (`PLANINGDate` dd/MM/yyyy, or `SSaleDate`).
+  final String date;
+  final String employee;
+  final int totalOrders;
+  final String remarks;
+
+  String get label => display.isNotEmpty ? display : '$number';
+
+  factory PlanSummary.fromMaster(Map<String, dynamic> json) {
+    String text(String key) => json[key]?.toString().trim() ?? '';
+    return PlanSummary(
+      number: int.tryParse(text('PLANINGNo')) ?? 0,
+      display: text('PLANINGNoDisplay').isNotEmpty ? text('PLANINGNoDisplay') : text('CNumberDisplay'),
+      date: text('PLANINGDate').isNotEmpty ? text('PLANINGDate') : text('SSaleDate'),
+      employee: text('EmployeeName'),
+      totalOrders: int.tryParse(text('TotalOrders')) ?? 0,
+      remarks: text('Remarks'),
+    );
+  }
+}

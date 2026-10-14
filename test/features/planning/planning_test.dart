@@ -17,6 +17,10 @@ import 'package:maleva_tv/features/planning/planning_api.dart';
 import 'package:maleva_tv/features/planning/planning_board.dart';
 import 'package:maleva_tv/features/planning/planning_controller.dart';
 import 'package:maleva_tv/features/planning/planning_job.dart';
+import 'package:maleva_tv/features/planning/planning_live.dart';
+import 'package:async/async.dart';
+import 'package:stream_channel/stream_channel.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:maleva_tv/main_navigation_screen.dart';
 
 import '../../fakes.dart';
@@ -111,6 +115,11 @@ void main() {
     final c = ProviderContainer(overrides: [
       jobsProvider.overrideWith((ref) async => [const JobModel(id: 1, jobNo: 'MY1', jobStatus: 'ASSIGNED')]),
       planningJobsProvider.overrideWith((ref) async => [const PlanningJob(id: 9, jobNo: 'MY9', truck: 'WXY 1234')]),
+      shownPlanningProvider.overrideWith((ref) async => (plan: null, jobs: const <PlanningJob>[])),
+      dayPlansProvider.overrideWith((ref) async => const <PlanSummary>[]),
+      // a socket that never answers: no network in tests
+      planningLiveProvider.overrideWith((ref) => PlanningLiveUpdates(
+          onPlanSaved: () {}, onStatus: (_) {}, connect: (_) async => _silentChannel(), uri: Uri.parse('ws://test'))),
     ]);
     addTearDown(c.dispose);
     await tester
@@ -144,4 +153,36 @@ class _SignedIn extends StateNotifier<TvAuthState> implements TvAuthController {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+WebSocketChannel _silentChannel() => _FakeSocket(StreamChannelController<dynamic>().local);
+
+class _FakeSocket extends StreamChannelMixin<dynamic> implements WebSocketChannel {
+  _FakeSocket(this._inner);
+  final StreamChannel<dynamic> _inner;
+
+  @override
+  Stream<dynamic> get stream => _inner.stream;
+
+  @override
+  WebSocketSink get sink => _FakeSink(_inner.sink);
+
+  @override
+  String? get protocol => null;
+
+  @override
+  int? get closeCode => null;
+
+  @override
+  String? get closeReason => null;
+
+  @override
+  Future<void> get ready => Future.value();
+}
+
+class _FakeSink extends DelegatingStreamSink<dynamic> implements WebSocketSink {
+  _FakeSink(super.sink);
+
+  @override
+  Future<void> close([int? closeCode, String? closeReason]) => super.close();
 }

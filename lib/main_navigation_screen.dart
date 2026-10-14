@@ -7,7 +7,9 @@ import 'features/board/job_board_view.dart';
 import 'features/home/presentation/home_controller.dart';
 import 'features/home/presentation/widgets/port_picker.dart';
 import 'features/planning/planning_board.dart';
+import 'features/planning/plan_picker.dart';
 import 'features/planning/planning_controller.dart';
+import 'features/planning/planning_live.dart';
 
 /// The vessel planning board and the remote control.
 ///
@@ -34,6 +36,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   Timer? _tick;
   DateTime _lastKey = DateTime.now();
 
+  PlanningLiveUpdates? _live;
   bool _searching = false;
   final TextEditingController _query = TextEditingController();
   final FocusNode _queryFocus = FocusNode(debugLabel: 'search');
@@ -47,6 +50,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   @override
   void initState() {
     super.initState();
+    // Live plan saves, only while the Planning board is on screen (see PlanningLiveUpdates)
+    WidgetsBinding.instance.addPostFrameCallback((_) => _syncLive());
+    ref.listenManual(boardProvider, (_, __) => _syncLive());
     // Repaint the search bar's border when the field gains or loses focus
     _queryFocus.addListener(() {
       if (!mounted) return;
@@ -69,7 +75,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // Refresh the board every minute
     _apiRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
       ref.invalidate(jobsProvider);
-      ref.invalidate(planningJobsProvider);
+      ref.invalidate(shownPlanningProvider);
+      ref.invalidate(dayPlansProvider);
     });
     // Drives the "auto in 30 s" countdown while paused
     _tick = Timer.periodic(const Duration(seconds: 1), (_) {
@@ -83,13 +90,32 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     _idleTimer?.cancel();
     _tick?.cancel();
     _debounce?.cancel();
+    _live?.stop();
     _query.dispose();
     _queryFocus.dispose();
     _focus.dispose();
     super.dispose();
   }
 
-  void _changeDate(int days) => ref.read(dateProvider.notifier).changeDate(days);
+  void _syncLive() {
+    if (!mounted) return;
+    final onPlanning = ref.read(boardProvider) == BoardKind.planning;
+    if (onPlanning && _live == null) {
+      _live = ref.read(planningLiveProvider);
+      _live!.start();
+    } else if (!onPlanning && _live != null) {
+      _live!.stop();
+      _live = null;
+    }
+  }
+
+  /// On Planning, another day means that day's plans: a chosen plan belongs to its own date.
+  void _changeDate(int days) {
+    if (ref.read(boardProvider) == BoardKind.planning && ref.read(planChoiceProvider) != null) {
+      ref.read(planChoiceProvider.notifier).show(null);
+    }
+    ref.read(dateProvider.notifier).changeDate(days);
+  }
 
   /// A key from the remote: leave auto mode and restart the idle countdown.
   void _takeControl() {
@@ -250,7 +276,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     }
     if (event is KeyDownEvent && key == LogicalKeyboardKey.colorF1Green) {
       // the port filter belongs to Vessel Planning only
-      if (ref.read(boardProvider) == BoardKind.vesselPlanning) _openPortPicker();
+      // green picks each board's own filter: the port on Vessel Planning, the plan on Planning
+      ref.read(boardProvider) == BoardKind.vesselPlanning ? _openPortPicker() : _openPlanPicker();
       return KeyEventResult.handled;
     }
     if (event is KeyDownEvent && _searchKeys.contains(key)) {
@@ -310,12 +337,18 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final search = ref.watch(searchProvider);
     final board = ref.watch(boardProvider);
-    final controls = Row(children: [_modePill(), ..._keyHelp()]);
+    final controls = Row(children: [
+      _modePill(),
+      if (board == BoardKind.planning) ...[const SizedBox(width: 10), _livePill()],
+      ..._keyHelp(),
+    ]);
     final searchBar = Row(
       children: [
         Expanded(child: _searchBar(search)),
         // Vessel Planning only: Planning has no port filter
-        if (board == BoardKind.vesselPlanning) ...[const SizedBox(width: 10), _portChip()],
+        // each board's own filter: the port on Vessel Planning, the plan on Planning
+        const SizedBox(width: 10),
+        board == BoardKind.vesselPlanning ? _portChip() : _planChip(),
       ],
     );
     return PopScope(
@@ -346,7 +379,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                     controls: controls,
                     search: search,
                     searchBar: searchBar,
-                    titleWidget: _boardTabs(board, 'Trucks and drivers planned for this day'),
+                    titleWidget: _boardTabs(board, _planningSubtitle()),
                   )
                 : JobBoardView(
                     key: const ValueKey(BoardKind.vesselPlanning),
@@ -540,6 +573,74 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     );
   }
 
+  // ---------- Plan choice (Planning) ----------
+
+  Future<void> _openPlanPicker() async {
+    _takeControl();
+    final current = ref.read(planChoiceProvider);
+    final picked = await showDialog<PlanPick>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder: (_) => PlanPicker(current: current),
+    );
+    if (!mounted) return;
+    _focus.requestFocus();
+    if (picked == null) return;
+    ref.read(planChoiceProvider.notifier).show(picked is OnePlan ? picked.number : null);
+    setState(() => _selected = null);
+    if (!_searching) _resumeAuto();
+  }
+
+  String _planningSubtitle() {
+    final shown = ref.watch(shownPlanningProvider).valueOrNull;
+    final plan = shown?.plan;
+    if (plan != null) {
+      return ['Plan #${plan.label}', if (plan.date.isNotEmpty) plan.date, if (plan.remarks.isNotEmpty) plan.remarks]
+          .join(' · ');
+    }
+    final n = ref.watch(dayPlansProvider).valueOrNull?.length;
+    return n == null ? 'All plans of the day' : 'All plans of the day · $n ${n == 1 ? 'plan' : 'plans'}';
+  }
+
+  Widget _planChip() {
+    final number = ref.watch(planChoiceProvider);
+    final plan = ref.watch(shownPlanningProvider).valueOrNull?.plan;
+    final one = number != null;
+    final text = one ? '#${plan?.label ?? number}' : 'ALL OF THE DAY';
+    return _filterChip(
+      icon: Icons.assignment_rounded,
+      label: 'PLAN',
+      value: text,
+      active: one,
+      onTap: _openPlanPicker,
+    );
+  }
+
+  /// LIVE: plan saves reload the board at once. Otherwise it still refreshes every minute.
+  Widget _livePill() {
+    final status = ref.watch(liveStatusProvider);
+    final (Color color, String text) = switch (status) {
+      LiveStatus.live => (const Color(0xFF4ADE80), 'LIVE · PLAN SAVES SHOW AT ONCE'),
+      LiveStatus.connecting => (BoardTheme.soon, 'CONNECTING LIVE…'),
+      LiveStatus.offline => (const Color(0xFFF87171), 'LIVE OFF · RETRYING · REFRESH EVERY MIN'),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.7)),
+      ),
+      child: Row(
+        children: [
+          Icon(status == LiveStatus.live ? Icons.sensors_rounded : Icons.sensors_off_rounded, size: 13, color: color),
+          const SizedBox(width: 4),
+          Text(text, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1.2, color: color)),
+        ],
+      ),
+    );
+  }
+
   // ---------- Port filter ----------
 
   /// The green button (or a click) opens the port list; the board then shows only that port.
@@ -561,42 +662,57 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
   Widget _portChip() {
     final port = ref.watch(portFilterProvider);
-    final filtered = port.isNotEmpty;
+    return _filterChip(
+      icon: Icons.anchor_rounded,
+      label: 'PORT',
+      value: port.isNotEmpty ? port.toUpperCase() : 'ALL PORTS',
+      active: port.isNotEmpty,
+      onTap: _openPortPicker,
+    );
+  }
+
+  /// The title bar's filter chip (PORT on Vessel Planning, PLAN on Planning): green while it limits
+  /// the board; the green dot says the remote's green button opens it.
+  Widget _filterChip({
+    required IconData icon,
+    required String label,
+    required String value,
+    required bool active,
+    required VoidCallback onTap,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
         canRequestFocus: false,
         borderRadius: BorderRadius.circular(12),
-        onTap: _openPortPicker,
+        onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           height: 42,
           constraints: const BoxConstraints(maxWidth: 300),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
-            color: filtered
-                ? const Color(0xFF22C55E).withValues(alpha: 0.16)
-                : BoardTheme.background.withValues(alpha: 0.7),
+            color:
+                active ? const Color(0xFF22C55E).withValues(alpha: 0.16) : BoardTheme.background.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: filtered ? const Color(0xFF4ADE80) : BoardTheme.border, width: 1.5),
+            border: Border.all(color: active ? const Color(0xFF4ADE80) : BoardTheme.border, width: 1.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.anchor_rounded,
-                  size: 20, color: filtered ? const Color(0xFF4ADE80) : BoardTheme.textSecondary),
+              Icon(icon, size: 20, color: active ? const Color(0xFF4ADE80) : BoardTheme.textSecondary),
               const SizedBox(width: 8),
               Flexible(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('PORT',
-                        style: TextStyle(
+                    Text(label,
+                        style: const TextStyle(
                             fontSize: 9, fontWeight: FontWeight.w800, color: BoardTheme.textMuted, letterSpacing: 1.4)),
                     Flexible(
                       child: Text(
-                        filtered ? port.toUpperCase() : 'ALL PORTS',
+                        value,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -610,7 +726,6 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              // the remote's green button opens the list
               Container(
                 width: 10,
                 height: 10,
@@ -699,8 +814,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           'PAGE'),
       key(icons(Icons.keyboard_arrow_left_rounded, Icons.keyboard_arrow_right_rounded), 'CHANGE DATE'),
       key(const Icon(Icons.search_rounded, size: 13, color: BoardTheme.textPrimary), 'MENU / BLUE: SEARCH'),
-      if (ref.watch(boardProvider) == BoardKind.vesselPlanning)
-        key(const Icon(Icons.circle, size: 10, color: Color(0xFF22C55E)), 'GREEN: PORT'),
+      key(const Icon(Icons.circle, size: 10, color: Color(0xFF22C55E)),
+          ref.watch(boardProvider) == BoardKind.vesselPlanning ? 'GREEN: PORT' : 'GREEN: PLAN'),
       key(const Icon(Icons.circle, size: 10, color: Color(0xFFFACC15)), 'YELLOW: BOARD'),
       key(const Text('OK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
           _auto ? 'PAUSE' : 'BACK TO AUTO'),

@@ -76,6 +76,26 @@ class _SamplePlanningApi extends PlanningApi {
   _SamplePlanningApi() : super(JavaApiClient(http.Client(), TvAuthService(http.Client())));
 
   @override
+  Future<({List<PlanSummary> plans, List<PlanningJob> jobs})> day(
+          {required int companyId, required DateTime date}) async =>
+      (
+        plans: const [
+          PlanSummary(number: 810, display: '810', employee: 'PUVIYARASU S', totalOrders: 4, remarks: 'FRIDAY'),
+          PlanSummary(number: 811, display: '811', employee: 'KAMATCHI', totalOrders: 2),
+        ],
+        jobs: await dayPlan(companyId: companyId, date: date),
+      );
+
+  @override
+  Future<({PlanSummary plan, List<PlanningJob> jobs})> plan({required int companyId, required int planningNo}) async {
+    final all = await dayPlan(companyId: companyId, date: DateTime.now());
+    return (
+      plan: PlanSummary(number: planningNo, display: '$planningNo', date: '14/10/2026', remarks: 'FRIDAY'),
+      jobs: planningNo == 810 ? all.take(4).toList() : all.skip(4).toList(),
+    );
+  }
+
+  @override
   Future<List<PlanningJob>> dayPlan({required int companyId, required DateTime date}) async {
     final now = DateTime.now();
     String at(int minutes) {
