@@ -7,18 +7,14 @@ import 'planning_job.dart';
 
 final planningApiProvider = Provider<PlanningApi>((ref) => PlanningApi(ref.watch(javaApiClientProvider)));
 
-/// The Planning board's rows for the selected day: the port filter and the search applied, then
-/// grouped by truck (A-Z, trucks not yet given last) and by pickup time inside each truck.
+/// The Planning board's rows for the selected day: the search applied, then grouped by truck
+/// (A-Z, trucks not yet given last) and by pickup time inside each truck.
+/// Planning is its own board: Vessel Planning's port filter does not apply here.
 final planningJobsProvider = FutureProvider<List<PlanningJob>>((ref) async {
   final date = ref.watch(dateProvider);
-  final port = ref.watch(portFilterProvider);
   final query = ref.watch(searchProvider).trim();
   final jobs = await ref.watch(planningApiProvider).dayPlan(companyId: ref.watch(companyIdProvider), date: date);
-  final shown = jobs
-      .where((j) => port.isEmpty || j.port == port || j.offPort == port)
-      .where((j) => query.isEmpty || matchesPlanning(j, query))
-      .toList()
-    ..sort(_byTruckThenPickup);
+  final shown = jobs.where((j) => query.isEmpty || matchesPlanning(j, query)).toList()..sort(_byTruckThenPickup);
   return [
     for (var i = 0; i < shown.length; i++) shown[i].withFirstOfTruck(i == 0 || shown[i].truck != shown[i - 1].truck),
   ];

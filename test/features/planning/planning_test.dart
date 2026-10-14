@@ -68,8 +68,8 @@ void main() {
 
   group('the Planning board rows', () {
     ProviderContainer container(List<Map<String, dynamic>> rows) {
-      final client = signedIn(
-          MockClient((r) async => http.Response(jsonEncode({'salemaster': [], 'saledetails': rows}), 200)));
+      final client =
+          signedIn(MockClient((r) async => http.Response(jsonEncode({'salemaster': [], 'saledetails': rows}), 200)));
       final c = ProviderContainer(overrides: [
         javaApiClientProvider.overrideWithValue(client),
         tvAuthProvider.overrideWith((ref) => _SignedIn()),
@@ -91,15 +91,14 @@ void main() {
       expect(jobs.map((j) => j.firstOfTruck), [true, true, false, true]);
     });
 
-    test('follow the port filter and the search', () async {
+    test('follow the search, but not Vessel Planning\'s port filter', () async {
       final c = container([
         _row(1, 'TRUCK A', '2026-10-14 10:00', port: 'SOUTHPORT-B11'),
         _row(2, 'TRUCK B', '2026-10-14 11:00', driver: 'MUTHU'),
       ]);
       c.read(portFilterProvider.notifier).select('WESTPORT-B18');
-      expect((await c.read(planningJobsProvider.future)).map((j) => j.id), [2]);
+      expect((await c.read(planningJobsProvider.future)).map((j) => j.id), [1, 2]);
 
-      c.read(portFilterProvider.notifier).select('');
       c.read(searchProvider.notifier).state = 'muthu';
       expect((await c.read(planningJobsProvider.future)).map((j) => j.id), [2]);
     });
@@ -114,7 +113,8 @@ void main() {
       planningJobsProvider.overrideWith((ref) async => [const PlanningJob(id: 9, jobNo: 'MY9', truck: 'WXY 1234')]),
     ]);
     addTearDown(c.dispose);
-    await tester.pumpWidget(UncontrolledProviderScope(container: c, child: const MaterialApp(home: MainNavigationScreen())));
+    await tester
+        .pumpWidget(UncontrolledProviderScope(container: c, child: const MaterialApp(home: MainNavigationScreen())));
     Future<void> settle() async {
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -129,10 +129,12 @@ void main() {
     expect(find.byType(PlanningBoardView), findsOneWidget);
     expect(find.text('WXY 1234'), findsOneWidget);
     expect(c.read(boardProvider), BoardKind.planning);
+    expect(find.text('ALL PORTS'), findsNothing); // no port filter on Planning
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await settle();
     expect(find.byType(JobBoardView), findsOneWidget);
+    expect(find.text('ALL PORTS'), findsOneWidget); // back on Vessel Planning, with its port filter
     await tester.pumpWidget(const SizedBox());
   });
 }

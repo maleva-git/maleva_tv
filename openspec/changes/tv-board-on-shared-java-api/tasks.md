@@ -54,5 +54,6 @@
 ## 7. Planning board (owner, 2026-10-14)
 
 - [x] 7.1 Second board PLANNING from the shared, read-only `POST /api/planing/select-planning` (React /planning/view; employee token; no backend change): the day's `saledetails` - truck (`TruckName`, else `TruckNameD`), driver (`DriverName`, else `DriverNameD`), job no., customer, from → to, vessel, pickup / delivery time, status. Grouped by truck, pickup time inside a truck. The TV never saves or changes a plan.
-- [x] 7.2 Tabs VESSEL PLANNING / PLANNING in the title bar; the remote's yellow button (Tab on desktop) or a click switches; the board is kept on the device. Same grid, auto-scroll, remote, search (truck, driver, vessel, job no., customer) and port filter (`SPort` / `OPort`).
+- [x] 7.2 Tabs VESSEL PLANNING / PLANNING in the title bar; the remote's yellow button (Tab on desktop) or a click switches; the board is kept on the device. Same grid, auto-scroll, remote and search (truck, driver, vessel, job no., customer).
 - [x] 7.3 `BoardView<T>` (one layout for both boards), `BoardHeaderRow`, `BoardCells` (time, status, highlight) shared. `JavaAnswer` reads unwrapped answers (select-planning has no `Data1`). Verify: `test/features/planning/planning_test.dart`.
+- [x] 7.4 The boards are separate (owner): the port filter is Vessel Planning's only - no PORT chip, no green key and no port filtering on Planning; switching boards closes the search. Verify: `test/features/planning/planning_test.dart`.

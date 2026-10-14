@@ -194,11 +194,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   int get _rowCount => _rows(ref).valueOrNull?.length ?? 0;
 
   /// The yellow button (or Tab) switches between Vessel Planning and Planning.
+  /// Each board is its own: switching closes the other board's search.
   void _switchBoard([BoardKind? to]) {
     final notifier = ref.read(boardProvider.notifier);
+    final before = ref.read(boardProvider);
     to == null ? notifier.toggle() : notifier.show(to);
-    setState(() => _selected = null);
-    if (!_searching) _resumeAuto();
+    if (ref.read(boardProvider) == before) return;
+    if (_searching || ref.read(searchProvider).isNotEmpty) _closeSearch();
+    _resumeAuto();
   }
 
   /// Moves the highlight by [step] rows. A single press past either end [wrap]s round, so ▲ on the
@@ -246,7 +249,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       return KeyEventResult.handled;
     }
     if (event is KeyDownEvent && key == LogicalKeyboardKey.colorF1Green) {
-      _openPortPicker();
+      // the port filter belongs to Vessel Planning only
+      if (ref.read(boardProvider) == BoardKind.vesselPlanning) _openPortPicker();
       return KeyEventResult.handled;
     }
     if (event is KeyDownEvent && _searchKeys.contains(key)) {
@@ -310,8 +314,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final searchBar = Row(
       children: [
         Expanded(child: _searchBar(search)),
-        const SizedBox(width: 10),
-        _portChip(),
+        // Vessel Planning only: Planning has no port filter
+        if (board == BoardKind.vesselPlanning) ...[const SizedBox(width: 10), _portChip()],
       ],
     );
     return PopScope(
@@ -695,7 +699,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           'PAGE'),
       key(icons(Icons.keyboard_arrow_left_rounded, Icons.keyboard_arrow_right_rounded), 'CHANGE DATE'),
       key(const Icon(Icons.search_rounded, size: 13, color: BoardTheme.textPrimary), 'MENU / BLUE: SEARCH'),
-      key(const Icon(Icons.circle, size: 10, color: Color(0xFF22C55E)), 'GREEN: PORT'),
+      if (ref.watch(boardProvider) == BoardKind.vesselPlanning)
+        key(const Icon(Icons.circle, size: 10, color: Color(0xFF22C55E)), 'GREEN: PORT'),
       key(const Icon(Icons.circle, size: 10, color: Color(0xFFFACC15)), 'YELLOW: BOARD'),
       key(const Text('OK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
           _auto ? 'PAUSE' : 'BACK TO AUTO'),

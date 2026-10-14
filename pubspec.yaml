@@ -2,7 +2,7 @@ name: maleva_tv
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.5.0+30
+version: 1.5.1+31
 
 environment:
   sdk: '>=3.5.0 <4.0.0'

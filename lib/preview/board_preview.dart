@@ -71,7 +71,6 @@ List<JobModel> _sampleJobs() {
   ];
 }
 
-
 /// Sample plans for the preview; the real board's grouping, port filter and search still run on them.
 class _SamplePlanningApi extends PlanningApi {
   _SamplePlanningApi() : super(JavaApiClient(http.Client(), TvAuthService(http.Client())));
@@ -86,12 +85,78 @@ class _SamplePlanningApi extends PlanningApi {
     }
 
     final rows = [
-      ('WXY 1234', 'RAMU', 'MY002605899', 'PETRONAS DAGANGAN', 'KLIA CARGO', 'WESTPORT-B18', 'EVER MAGNA', 'ASSIGNED', -60, 30),
-      ('WXY 1234', 'RAMU', 'MY002605901', 'SHELL MALAYSIA', 'WESTPORT-B18', 'PORT KLANG WAREHOUSE', 'SHIJING', 'IN TRANSIT', 45, 120),
-      ('BKA 5521', 'MUTHU SAMY', 'MY002605902', 'MAERSK LINE', 'SOUTHPORT-B11', 'SHAH ALAM DEPOT', 'MTT HAIPHONG', 'PENDING', 90, 200),
-      ('BKA 5521', 'MUTHU SAMY', 'MY002605910', 'ACME SHIP SUPPLY', 'SHAH ALAM DEPOT', 'NORTHPORT-W5', 'MV ORIENTAL JADE', 'ASSIGNED', 240, 330),
-      ('JHB 777', 'HAFIZ RAHMAN', 'MY002605915', 'KONTENA NASIONAL', 'PTP-J33', 'JOHOR WAREHOUSE', 'PSV SWIRE PACIFIC', 'COMPLETED', -300, -200),
-      ('', '', 'MY002605920', 'TOTAL ENERGIES', 'KL OFFICE', 'WESTPORT-B18', 'BOURBON LIBERTY 312', 'PENDING', 400, 480),
+      (
+        'WXY 1234',
+        'RAMU',
+        'MY002605899',
+        'PETRONAS DAGANGAN',
+        'KLIA CARGO',
+        'WESTPORT-B18',
+        'EVER MAGNA',
+        'ASSIGNED',
+        -60,
+        30
+      ),
+      (
+        'WXY 1234',
+        'RAMU',
+        'MY002605901',
+        'SHELL MALAYSIA',
+        'WESTPORT-B18',
+        'PORT KLANG WAREHOUSE',
+        'SHIJING',
+        'IN TRANSIT',
+        45,
+        120
+      ),
+      (
+        'BKA 5521',
+        'MUTHU SAMY',
+        'MY002605902',
+        'MAERSK LINE',
+        'SOUTHPORT-B11',
+        'SHAH ALAM DEPOT',
+        'MTT HAIPHONG',
+        'PENDING',
+        90,
+        200
+      ),
+      (
+        'BKA 5521',
+        'MUTHU SAMY',
+        'MY002605910',
+        'ACME SHIP SUPPLY',
+        'SHAH ALAM DEPOT',
+        'NORTHPORT-W5',
+        'MV ORIENTAL JADE',
+        'ASSIGNED',
+        240,
+        330
+      ),
+      (
+        'JHB 777',
+        'HAFIZ RAHMAN',
+        'MY002605915',
+        'KONTENA NASIONAL',
+        'PTP-J33',
+        'JOHOR WAREHOUSE',
+        'PSV SWIRE PACIFIC',
+        'COMPLETED',
+        -300,
+        -200
+      ),
+      (
+        '',
+        '',
+        'MY002605920',
+        'TOTAL ENERGIES',
+        'KL OFFICE',
+        'WESTPORT-B18',
+        'BOURBON LIBERTY 312',
+        'PENDING',
+        400,
+        480
+      ),
     ];
     var id = 1;
     return [
