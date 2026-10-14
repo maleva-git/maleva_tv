@@ -10,10 +10,11 @@ class BoardHeaderRow extends StatelessWidget {
 
   static const height = 66.0;
 
+  /// White headings on the header bar (navy on Vessel Planning, Maleva blue on Planning).
   static TextStyle get style => TextStyle(
-        fontSize: 12,
-        fontWeight: FontWeight.w800,
-        color: BoardTheme.textPrimary,
+        fontSize: 13,
+        fontWeight: FontWeight.w900,
+        color: BoardTheme.headerText,
         letterSpacing: 1.6,
       );
 
@@ -35,11 +36,11 @@ class BoardHeaderRow extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(code, style: style.copyWith(fontSize: 13)),
+                Text(code, style: style.copyWith(fontSize: 14)),
                 Text(meaning,
                     style: TextStyle(
                         fontSize: 10,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                         color: BoardTheme.headerSubText,
                         letterSpacing: 1.4)),
               ],
