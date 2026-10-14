@@ -38,6 +38,30 @@ class PortFilterController extends StateNotifier<String> {
   }
 }
 
+/// The two boards. Kept on the device like the port, so a TV used for Planning starts on Planning.
+enum BoardKind { vesselPlanning, planning }
+
+class BoardChoiceController extends StateNotifier<BoardKind> {
+  BoardChoiceController(this._storage) : super(BoardKind.vesselPlanning) {
+    _storage.read(key: _key).then((saved) {
+      if (mounted && saved == BoardKind.planning.name) state = BoardKind.planning;
+    }).catchError((_) {});
+  }
+
+  static const _key = 'tv.board';
+  final FlutterSecureStorage _storage;
+
+  void show(BoardKind board) {
+    state = board;
+    _storage.write(key: _key, value: board.name).catchError((_) {});
+  }
+
+  void toggle() => show(state == BoardKind.vesselPlanning ? BoardKind.planning : BoardKind.vesselPlanning);
+}
+
+final boardProvider = StateNotifierProvider<BoardChoiceController, BoardKind>(
+    (ref) => BoardChoiceController(ref.watch(portStorageProvider)));
+
 final portStorageProvider = Provider<FlutterSecureStorage>((ref) => TvAuthService.defaultStorage);
 
 final portFilterProvider =

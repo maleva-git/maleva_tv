@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+import 'package:maleva_tv/core/network/java_api_client.dart';
+import 'package:maleva_tv/core/session/tv_auth_service.dart';
+import 'package:maleva_tv/features/planning/planning_api.dart';
+import 'package:maleva_tv/features/planning/planning_controller.dart';
+import 'package:maleva_tv/features/planning/planning_job.dart';
 import 'package:maleva_tv/features/home/domain/entities/job_model.dart';
 import 'package:maleva_tv/features/home/presentation/home_controller.dart';
 import 'package:maleva_tv/main_navigation_screen.dart';
@@ -15,6 +21,7 @@ void main() {
         final jobs = _sampleJobs().where((j) => port.isEmpty || j.port == port || j.offPort == port).toList();
         return query.isEmpty ? jobs : jobs.where((job) => matchesSearch(job, query)).toList();
       }),
+      planningApiProvider.overrideWithValue(_SamplePlanningApi()),
       portsProvider.overrideWith((ref) async => ['NORTHPORT-W5', 'PTP-J33', 'SOUTHPORT-B11', 'WESTPORT-B18']),
     ],
     child: const MaterialApp(debugShowCheckedModeBanner: false, home: MainNavigationScreen()),
@@ -62,4 +69,48 @@ List<JobModel> _sampleJobs() {
         soetd: r.$2.isEmpty ? null : at(r.$7 + 540),
       ),
   ];
+}
+
+
+/// Sample plans for the preview; the real board's grouping, port filter and search still run on them.
+class _SamplePlanningApi extends PlanningApi {
+  _SamplePlanningApi() : super(JavaApiClient(http.Client(), TvAuthService(http.Client())));
+
+  @override
+  Future<List<PlanningJob>> dayPlan({required int companyId, required DateTime date}) async {
+    final now = DateTime.now();
+    String at(int minutes) {
+      final t = now.add(Duration(minutes: minutes));
+      String two(int v) => v.toString().padLeft(2, '0');
+      return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}';
+    }
+
+    final rows = [
+      ('WXY 1234', 'RAMU', 'MY002605899', 'PETRONAS DAGANGAN', 'KLIA CARGO', 'WESTPORT-B18', 'EVER MAGNA', 'ASSIGNED', -60, 30),
+      ('WXY 1234', 'RAMU', 'MY002605901', 'SHELL MALAYSIA', 'WESTPORT-B18', 'PORT KLANG WAREHOUSE', 'SHIJING', 'IN TRANSIT', 45, 120),
+      ('BKA 5521', 'MUTHU SAMY', 'MY002605902', 'MAERSK LINE', 'SOUTHPORT-B11', 'SHAH ALAM DEPOT', 'MTT HAIPHONG', 'PENDING', 90, 200),
+      ('BKA 5521', 'MUTHU SAMY', 'MY002605910', 'ACME SHIP SUPPLY', 'SHAH ALAM DEPOT', 'NORTHPORT-W5', 'MV ORIENTAL JADE', 'ASSIGNED', 240, 330),
+      ('JHB 777', 'HAFIZ RAHMAN', 'MY002605915', 'KONTENA NASIONAL', 'PTP-J33', 'JOHOR WAREHOUSE', 'PSV SWIRE PACIFIC', 'COMPLETED', -300, -200),
+      ('', '', 'MY002605920', 'TOTAL ENERGIES', 'KL OFFICE', 'WESTPORT-B18', 'BOURBON LIBERTY 312', 'PENDING', 400, 480),
+    ];
+    var id = 1;
+    return [
+      for (final r in rows)
+        PlanningJob(
+          id: id,
+          jobNo: r.$3,
+          jobStatus: r.$8,
+          truck: r.$1,
+          driver: r.$2,
+          customer: r.$4,
+          origin: r.$5,
+          destination: r.$6,
+          vessel: r.$7,
+          pickup: at(r.$9),
+          delivery: at(r.$10),
+          port: 'WESTPORT-B18',
+          sortBy: id++,
+        ),
+    ];
+  }
 }

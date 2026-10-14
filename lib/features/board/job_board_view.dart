@@ -4,12 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:maleva_tv/core/network/api_exception.dart';
 import 'package:maleva_tv/features/home/domain/entities/job_model.dart';
 import 'package:maleva_tv/features/home/presentation/widgets/job_board_item.dart';
+import 'board_header.dart';
 import 'board_theme.dart';
 
-/// One full-screen TV board: title bar with status summary, clock and date control,
-/// a table grid with grouped ETA / ETB / ETD headers and an auto-scrolling job list, and a legend footer.
-class JobBoardView extends StatefulWidget {
-  const JobBoardView({
+/// Builds one row of a board: the item, its position, whether the remote picked it, and the clock.
+typedef BoardRowBuilder<T> = Widget Function(T item, int index, bool selected, DateTime now);
+
+/// One full-screen TV board: title bar (title, search, date, clock), a bordered grid with the
+/// board's own [columnHeaders] and rows ([rowBuilder]) that scrolls by itself, and a legend footer.
+/// Vessel Planning ([JobBoardView]) and Planning use it, so both look and behave the same.
+class BoardView<T> extends StatefulWidget {
+  const BoardView({
     required this.title,
     required this.subtitle,
     required this.date,
@@ -21,6 +26,10 @@ class JobBoardView extends StatefulWidget {
     this.controls,
     this.search = '',
     this.searchBar,
+    required this.columnHeaders,
+    required this.rowBuilder,
+    this.titleWidget,
+    this.noMatchTitle = 'Nothing matches',
     super.key,
   });
 
@@ -28,7 +37,7 @@ class JobBoardView extends StatefulWidget {
   final String subtitle;
   final DateTime date;
   final ValueChanged<int> onChangeDate;
-  final AsyncValue<List<JobModel>> jobs;
+  final AsyncValue<List<T>> jobs;
   final double scrollStep;
 
   /// Scrolls by itself. Off while someone drives the board with the remote.
@@ -40,17 +49,28 @@ class JobBoardView extends StatefulWidget {
   /// Shown at the left of the footer: the mode badge and remote help.
   final Widget? controls;
 
-  /// The vessel search on the board ('' for none); its words are highlighted in the rows.
+  /// The search on the board ('' for none).
   final String search;
 
-  /// The vessel search field, in the title bar between the title and the date.
+  /// The search field, in the title bar between the title and the date.
   final Widget? searchBar;
 
+  /// The grid's heading row, laid out with [BoardTheme.cell] like the rows.
+  final Widget columnHeaders;
+
+  final BoardRowBuilder<T> rowBuilder;
+
+  /// Replaces the plain [title] text, e.g. with the board tabs.
+  final Widget? titleWidget;
+
+  /// The empty-list heading while searching, e.g. 'No vessel matches'.
+  final String noMatchTitle;
+
   @override
-  State<JobBoardView> createState() => _JobBoardViewState();
+  State<BoardView<T>> createState() => _BoardViewState<T>();
 }
 
-class _JobBoardViewState extends State<JobBoardView> {
+class _BoardViewState<T> extends State<BoardView<T>> {
   final ScrollController _scrollController = ScrollController();
   Timer? _autoScrollTimer;
   Timer? _clockTimer;
@@ -79,7 +99,7 @@ class _JobBoardViewState extends State<JobBoardView> {
   }
 
   @override
-  void didUpdateWidget(covariant JobBoardView oldWidget) {
+  void didUpdateWidget(covariant BoardView<T> oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.jobs.hasValue && !identical(widget.jobs.valueOrNull, oldWidget.jobs.valueOrNull)) {
       _updatedAt = DateTime.now();
@@ -209,6 +229,7 @@ class _JobBoardViewState extends State<JobBoardView> {
   }
 
   Widget _titleText() {
+    if (widget.titleWidget != null) return widget.titleWidget!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
@@ -329,104 +350,8 @@ class _JobBoardViewState extends State<JobBoardView> {
       ),
       child: Column(
         children: [
-          _columnHeaders(),
+          widget.columnHeaders,
           Expanded(child: _body()),
-        ],
-      ),
-    );
-  }
-
-  static const _headerStyle = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w800,
-    color: BoardTheme.textPrimary,
-    letterSpacing: 1.6,
-  );
-
-  /// Two header lines: vessel group names on top, then ETA (arrival), ETB (berthing) and ETD (departure).
-  Widget _columnHeaders() {
-    final cell = BoardTheme.cell;
-    Widget label(String t, {Alignment align = Alignment.center}) => Align(
-          alignment: align,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: FittedBox(fit: BoxFit.scaleDown, child: Text(t, style: _headerStyle)),
-          ),
-        );
-    Widget time(String code, String meaning) => Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 6),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(code, style: _headerStyle.copyWith(fontSize: 13)),
-                  Text(meaning,
-                      style: const TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          color: BoardTheme.textSecondary,
-                          letterSpacing: 1.4)),
-                ],
-              ),
-            ),
-          ),
-        );
-    Widget group(String title, Color color, {bool last = false}) => cell(
-          flex: BoardTheme.timeGroup,
-          divider: !last,
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  border: const Border(bottom: BorderSide(color: BoardTheme.gridLine)),
-                ),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.directions_boat_filled_rounded, size: 15, color: color),
-                      const SizedBox(width: 8),
-                      Text(title, style: _headerStyle.copyWith(fontSize: 11, color: color)),
-                    ],
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    cell(child: time('ETA', 'ARRIVAL')),
-                    cell(child: time('ETB', 'BERTHING')),
-                    cell(child: time('ETD', 'DEPARTURE'), divider: false),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-    return Container(
-      height: 66,
-      decoration: const BoxDecoration(
-        color: BoardTheme.headerFill,
-        border: Border(bottom: BorderSide(color: BoardTheme.accent, width: 2)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          cell(width: BoardTheme.snoWidth, child: label('#')),
-          cell(flex: BoardTheme.vessel, child: label('VESSEL', align: Alignment.centerLeft)),
-          cell(flex: BoardTheme.port, child: label('PORT', align: Alignment.centerLeft)),
-          cell(flex: BoardTheme.jobNo, child: label('JOB NO.')),
-          cell(flex: BoardTheme.employee, child: label('EMPLOYEE', align: Alignment.centerLeft)),
-          cell(flex: BoardTheme.status, child: label('STATUS')),
-          group('LOADING VESSEL', BoardTheme.accent),
-          group('OFF VESSEL', BoardTheme.offVessel, last: true),
         ],
       ),
     );
@@ -453,7 +378,7 @@ class _JobBoardViewState extends State<JobBoardView> {
               ? _message(
                   icon: Icons.search_off_rounded,
                   color: BoardTheme.textSecondary,
-                  title: 'No vessel matches "${widget.search.trim().toUpperCase()}"',
+                  title: '${widget.noMatchTitle} "${widget.search.trim().toUpperCase()}"',
                   detail: 'Check the spelling, or press Back to clear the search.',
                 )
               : _message(
@@ -484,13 +409,8 @@ class _JobBoardViewState extends State<JobBoardView> {
                   padding: const EdgeInsets.only(bottom: 40),
                   itemExtent: _rowHeight,
                   itemCount: list.length,
-                  itemBuilder: (context, index) => JobBoardItem(
-                    job: list[index],
-                    index: index,
-                    now: _now,
-                    selected: widget.selectedIndex == index,
-                    highlight: widget.search,
-                  ),
+                  itemBuilder: (context, index) =>
+                      widget.rowBuilder(list[index], index, widget.selectedIndex == index, _now),
                 ),
               ),
             ),
@@ -619,6 +539,60 @@ class _LiveDotState extends State<_LiveDot> with SingleTickerProviderStateMixin 
           boxShadow: [BoxShadow(color: const Color(0xFF4ADE80).withValues(alpha: 0.8), blurRadius: 8)],
         ),
       ),
+    );
+  }
+}
+
+/// The Vessel Planning board: [BoardView] with the vessel grid (port, ETA / ETB / ETD of both vessels).
+class JobBoardView extends StatelessWidget {
+  const JobBoardView({
+    required this.title,
+    required this.subtitle,
+    required this.date,
+    required this.onChangeDate,
+    required this.jobs,
+    this.scrollStep = 1.5,
+    this.autoPlay = true,
+    this.selectedIndex,
+    this.controls,
+    this.search = '',
+    this.searchBar,
+    this.titleWidget,
+    super.key,
+  });
+
+  final String title;
+  final String subtitle;
+  final DateTime date;
+  final ValueChanged<int> onChangeDate;
+  final AsyncValue<List<JobModel>> jobs;
+  final double scrollStep;
+  final bool autoPlay;
+  final int? selectedIndex;
+  final Widget? controls;
+  final String search;
+  final Widget? searchBar;
+  final Widget? titleWidget;
+
+  @override
+  Widget build(BuildContext context) {
+    return BoardView<JobModel>(
+      title: title,
+      subtitle: subtitle,
+      date: date,
+      onChangeDate: onChangeDate,
+      jobs: jobs,
+      scrollStep: scrollStep,
+      autoPlay: autoPlay,
+      selectedIndex: selectedIndex,
+      controls: controls,
+      search: search,
+      searchBar: searchBar,
+      titleWidget: titleWidget,
+      noMatchTitle: 'No vessel matches',
+      columnHeaders: const VesselColumnHeaders(),
+      rowBuilder: (job, index, selected, now) =>
+          JobBoardItem(job: job, index: index, now: now, selected: selected, highlight: search),
     );
   }
 }

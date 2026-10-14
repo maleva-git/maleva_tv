@@ -6,6 +6,8 @@ import 'features/board/board_theme.dart';
 import 'features/board/job_board_view.dart';
 import 'features/home/presentation/home_controller.dart';
 import 'features/home/presentation/widgets/port_picker.dart';
+import 'features/planning/planning_board.dart';
+import 'features/planning/planning_controller.dart';
 
 /// The vessel planning board and the remote control.
 ///
@@ -65,7 +67,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       }
     });
     // Refresh the board every minute
-    _apiRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) => ref.invalidate(jobsProvider));
+    _apiRefreshTimer = Timer.periodic(const Duration(minutes: 1), (_) {
+      ref.invalidate(jobsProvider);
+      ref.invalidate(planningJobsProvider);
+    });
     // Drives the "auto in 30 s" countdown while paused
     _tick = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!_auto && mounted) setState(() {});
@@ -178,7 +183,23 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   };
   static final _typedKey = RegExp(r'^[A-Za-z0-9]$');
 
-  int get _rowCount => ref.read(jobsProvider).valueOrNull?.length ?? 0;
+  /// The rows of the board on screen.
+  AsyncValue<List<Object>> _rows(WidgetRef ref, {bool watch = false}) {
+    final planning = (watch ? ref.watch(boardProvider) : ref.read(boardProvider)) == BoardKind.planning;
+    return planning
+        ? (watch ? ref.watch(planningJobsProvider) : ref.read(planningJobsProvider))
+        : (watch ? ref.watch(jobsProvider) : ref.read(jobsProvider));
+  }
+
+  int get _rowCount => _rows(ref).valueOrNull?.length ?? 0;
+
+  /// The yellow button (or Tab) switches between Vessel Planning and Planning.
+  void _switchBoard([BoardKind? to]) {
+    final notifier = ref.read(boardProvider.notifier);
+    to == null ? notifier.toggle() : notifier.show(to);
+    setState(() => _selected = null);
+    if (!_searching) _resumeAuto();
+  }
 
   /// Moves the highlight by [step] rows. A single press past either end [wrap]s round, so ▲ on the
   /// first row goes straight to the last; a held key stops at the end instead of spinning round.
@@ -220,6 +241,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     if (event is KeyUpEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
 
+    if (event is KeyDownEvent && (key == LogicalKeyboardKey.colorF2Yellow || key == LogicalKeyboardKey.tab)) {
+      _switchBoard();
+      return KeyEventResult.handled;
+    }
     if (event is KeyDownEvent && key == LogicalKeyboardKey.colorF1Green) {
       _openPortPicker();
       return KeyEventResult.handled;
@@ -280,6 +305,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final search = ref.watch(searchProvider);
+    final board = ref.watch(boardProvider);
+    final controls = Row(children: [_modePill(), ..._keyHelp()]);
+    final searchBar = Row(
+      children: [
+        Expanded(child: _searchBar(search)),
+        const SizedBox(width: 10),
+        _portChip(),
+      ],
+    );
     return PopScope(
       // Back on the remote clears the search, then returns to auto mode; only then does it leave the app.
       canPop: _auto && !_searching,
@@ -296,29 +330,104 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           child: GestureDetector(
             behavior: HitTestBehavior.translucent,
             onTap: () => _focus.requestFocus(),
-            child: JobBoardView(
-              title: 'VESSEL PLANNING',
-              subtitle: search.isEmpty
-                  ? 'Arriving on this day · finished hidden'
-                  : 'Search · $searchDaysBack days back to $searchDaysAhead days ahead',
-              date: ref.watch(dateProvider),
-              onChangeDate: _changeDate,
-              jobs: ref.watch(jobsProvider),
-              scrollStep: 0.5, // about 15 px a second: one row every 6 s, slow enough to read
-              autoPlay: _auto,
-              selectedIndex: _selected,
-              controls: Row(children: [_modePill(), ..._keyHelp()]),
-              search: search,
-              searchBar: Row(
-                children: [
-                  Expanded(child: _searchBar(search)),
-                  const SizedBox(width: 10),
-                  _portChip(),
-                ],
-              ),
+            child: board == BoardKind.planning
+                ? PlanningBoardView(
+                    // a new board gets its own state (scroll position), not the other board's
+                    key: const ValueKey(BoardKind.planning),
+                    date: ref.watch(dateProvider),
+                    onChangeDate: _changeDate,
+                    jobs: ref.watch(planningJobsProvider),
+                    autoPlay: _auto,
+                    selectedIndex: _selected,
+                    controls: controls,
+                    search: search,
+                    searchBar: searchBar,
+                    titleWidget: _boardTabs(board, 'Trucks and drivers planned for this day'),
+                  )
+                : JobBoardView(
+                    key: const ValueKey(BoardKind.vesselPlanning),
+                    title: 'VESSEL PLANNING',
+                    subtitle: '',
+                    date: ref.watch(dateProvider),
+                    onChangeDate: _changeDate,
+                    jobs: ref.watch(jobsProvider),
+                    scrollStep: 0.5, // about 15 px a second: one row every 6 s, slow enough to read
+                    autoPlay: _auto,
+                    selectedIndex: _selected,
+                    controls: controls,
+                    search: search,
+                    searchBar: searchBar,
+                    titleWidget: _boardTabs(
+                        board,
+                        search.isEmpty
+                            ? 'Arriving on this day · finished hidden'
+                            : 'Search · $searchDaysBack days back to $searchDaysAhead days ahead'),
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ---------- Board tabs (in the title bar) ----------
+
+  Widget _boardTabs(BoardKind board, String subtitle) {
+    Widget tab(BoardKind kind, String label, IconData icon) {
+      final on = kind == board;
+      return Material(
+        color: Colors.transparent,
+        child: InkWell(
+          canRequestFocus: false,
+          borderRadius: BorderRadius.circular(10),
+          onTap: () => _switchBoard(kind),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            decoration: BoxDecoration(
+              color: on ? BoardTheme.accent.withValues(alpha: 0.22) : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: on ? BoardTheme.accent : BoardTheme.border, width: on ? 2 : 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, size: 18, color: on ? BoardTheme.textPrimary : BoardTheme.textMuted),
+                const SizedBox(width: 8),
+                Text(label,
+                    style: TextStyle(
+                        fontSize: on ? 17 : 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.5,
+                        color: on ? BoardTheme.textPrimary : BoardTheme.textMuted)),
+              ],
             ),
           ),
         ),
+      );
+    }
+
+    // Shrinks rather than overflow the slim title bar.
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              tab(BoardKind.vesselPlanning, 'VESSEL PLANNING', Icons.directions_boat_filled_rounded),
+              const SizedBox(width: 8),
+              tab(BoardKind.planning, 'PLANNING', Icons.local_shipping_rounded),
+            ],
+          ),
+          const SizedBox(height: 3),
+          Text(subtitle.toUpperCase(),
+              maxLines: 1,
+              style: const TextStyle(
+                  fontSize: 10, fontWeight: FontWeight.w600, color: BoardTheme.textSecondary, letterSpacing: 1.2)),
+        ],
       ),
     );
   }
@@ -328,7 +437,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   /// Always in the title bar. Idle it shows how many vessels the board has; while searching,
   /// how many match.
   Widget _searchBar(String search) {
-    final jobs = ref.watch(jobsProvider);
+    final jobs = _rows(ref, watch: true);
+    final planning = ref.watch(boardProvider) == BoardKind.planning;
     final focused = _queryFocus.hasFocus;
     final active = focused || search.isNotEmpty;
     final n = jobs.valueOrNull?.length;
@@ -340,7 +450,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     } else if (search.isNotEmpty) {
       info = n == 1 ? '1 FOUND' : '$n FOUND';
     } else {
-      info = n == 1 ? '1 VESSEL' : '$n VESSELS';
+      info = planning ? (n == 1 ? '1 JOB' : '$n JOBS') : (n == 1 ? '1 VESSEL' : '$n VESSELS');
     }
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
@@ -380,11 +490,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 cursorColor: BoardTheme.selection,
                 style: const TextStyle(
                     fontSize: 17, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary, letterSpacing: 1),
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   isDense: true,
                   border: InputBorder.none,
-                  hintText: 'PRESS MENU TO SEARCH VESSEL OR JOB NO.',
-                  hintStyle: TextStyle(
+                  hintText: planning
+                      ? 'PRESS MENU TO SEARCH TRUCK, DRIVER, VESSEL OR JOB NO.'
+                      : 'PRESS MENU TO SEARCH VESSEL OR JOB NO.',
+                  hintStyle: const TextStyle(
                       fontSize: 14, fontWeight: FontWeight.w700, color: BoardTheme.textMuted, letterSpacing: 1),
                 ),
               ),
@@ -584,6 +696,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       key(icons(Icons.keyboard_arrow_left_rounded, Icons.keyboard_arrow_right_rounded), 'CHANGE DATE'),
       key(const Icon(Icons.search_rounded, size: 13, color: BoardTheme.textPrimary), 'MENU / BLUE: SEARCH'),
       key(const Icon(Icons.circle, size: 10, color: Color(0xFF22C55E)), 'GREEN: PORT'),
+      key(const Icon(Icons.circle, size: 10, color: Color(0xFFFACC15)), 'YELLOW: BOARD'),
       key(const Text('OK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
           _auto ? 'PAUSE' : 'BACK TO AUTO'),
     ];

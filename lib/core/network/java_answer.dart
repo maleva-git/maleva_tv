@@ -14,7 +14,12 @@ class JavaAnswer {
     final body = _decode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (body is Map<String, dynamic>) {
-        return body['Data1'] ?? body['Data'] ?? body['data'];
+        // Wrapped answers carry the data in Data1 / Data / data; a few (Planning's select-planning)
+        // send the object itself.
+        for (final key in const ['Data1', 'Data', 'data']) {
+          if (body.containsKey(key)) return body[key];
+        }
+        return body;
       }
       return body;
     }
