@@ -8,7 +8,8 @@ import 'package:maleva_tv/features/planning/truck_fleet.dart';
 
 import '../../fakes.dart';
 
-PlanningJob _job(int id, int truckId, [String truck = '']) => PlanningJob(id: id, jobNo: 'MY$id', truckId: truckId, truck: truck);
+PlanningJob _job(int id, int truckId, [String truck = '']) =>
+    PlanningJob(id: id, jobNo: 'MY$id', truckId: truckId, truck: truck);
 
 void main() {
   test('the fleet is the web\'s planning truck list (GET /api/truck-orders/trucks?companyRefId=)', () async {

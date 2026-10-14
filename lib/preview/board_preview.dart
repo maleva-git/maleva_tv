@@ -206,9 +206,25 @@ class _SamplePlanningApi extends PlanningApi {
   }
 }
 
-
 const _fleet = [
-  'APL7151', 'BNU 7151', 'BPR 7151', 'GM 7151', 'GOLD 7151', 'JPM 7151', 'JQV 7151', 'JQX 7151', 'JTB 7151',
-  'JWS 7151', 'JYW7151', 'NDU 5183', 'NEL7151', 'QD 7151', 'SP 7151', 'UKM7151', 'UMS 7151', 'V6358MY',
-  'VIPS 7151', 'VR 7151',
+  'APL7151',
+  'BNU 7151',
+  'BPR 7151',
+  'GM 7151',
+  'GOLD 7151',
+  'JPM 7151',
+  'JQV 7151',
+  'JQX 7151',
+  'JTB 7151',
+  'JWS 7151',
+  'JYW7151',
+  'NDU 5183',
+  'NEL7151',
+  'QD 7151',
+  'SP 7151',
+  'UKM7151',
+  'UMS 7151',
+  'V6358MY',
+  'VIPS 7151',
+  'VR 7151',
 ];

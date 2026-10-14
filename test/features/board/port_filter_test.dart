@@ -75,6 +75,42 @@ void main() {
     expect(container.read(portFilterProvider), 'SOUTHPORT-B11');
     await tester.pumpWidget(const SizedBox());
   });
+
+  testWidgets('typing in the port list searches the ports; OK shows the match', (tester) async {
+    await open(tester);
+    await tester.tap(find.text('ALL PORTS'));
+    await settle(tester);
+
+    for (final c in 'west'.split('')) {
+      await tester.sendKeyEvent(LogicalKeyboardKey(LogicalKeyboardKey.keyA.keyId + c.codeUnitAt(0) - 97), character: c);
+      await settle(tester);
+    }
+    final list = find.byType(PortPicker);
+    expect(find.descendant(of: list, matching: find.textContaining('SOUTHPORT')), findsNothing);
+    expect(find.descendant(of: list, matching: find.text('1 PORT')), findsOneWidget);
+
+    await press(tester, LogicalKeyboardKey.enter);
+    expect(find.byType(PortPicker), findsNothing);
+    expect(container.read(portFilterProvider), 'WESTPORT-B18');
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('Back clears the port search first, then closes the list', (tester) async {
+    await open(tester);
+    await tester.tap(find.text('ALL PORTS'));
+    await settle(tester);
+    await tester.sendKeyEvent(LogicalKeyboardKey.keyS, character: 's');
+    await settle(tester);
+
+    await press(tester, LogicalKeyboardKey.escape);
+    expect(find.byType(PortPicker), findsOneWidget);
+    expect(find.descendant(of: find.byType(PortPicker), matching: find.text('ALL PORTS')), findsOneWidget);
+
+    await press(tester, LogicalKeyboardKey.escape);
+    expect(find.byType(PortPicker), findsNothing);
+    expect(container.read(portFilterProvider), '');
+    await tester.pumpWidget(const SizedBox());
+  });
 }
 
 Future<void> settle(WidgetTester tester) async {
