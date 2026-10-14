@@ -111,8 +111,8 @@ class PlanningColumnHeaders extends StatelessWidget {
   }
 }
 
-/// One planned job on one row. The truck is its full name in large blue letters, the driver a large
-/// name with initials, so both read from across the room. A truck's next job straight after its
+/// One planned job on one row. The truck is a truck icon and its full name in large blue letters, the
+/// driver a large name, so both read from across the room. A truck's next job straight after its
 /// previous one shows the name lighter.
 class PlanningRow extends StatelessWidget {
   const PlanningRow({
@@ -193,8 +193,8 @@ class PlanningRow extends StatelessWidget {
         ),
       );
 
-  /// Only the truck name: large, full (a long name shrinks to fit, never cut), on the column's soft blue
-  /// tint. The truck's next job straight after shows the name lighter.
+  /// A truck icon and the truck name: large, full (a long name shrinks to fit, never cut), on the
+  /// column's soft blue tint. The truck's next job straight after shows the icon and name lighter.
   Widget _truck() {
     final none = job.truck.isEmpty;
     final repeat = !job.firstOfTruck;
@@ -205,26 +205,32 @@ class PlanningRow extends StatelessWidget {
       child: none
           ? Text('NO TRUCK YET',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: BoardTheme.warning, letterSpacing: 1))
-          : FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerLeft,
-              child: Text.rich(
-                _marked(
-                  job.truck.toUpperCase(),
-                  TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                    color: repeat ? BoardTheme.textMuted : BoardTheme.accent,
+          : Row(children: [
+              Icon(Icons.local_shipping_rounded, size: 26, color: repeat ? BoardTheme.textMuted : BoardTheme.accent),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text.rich(
+                    _marked(
+                      job.truck.toUpperCase(),
+                      TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                        color: repeat ? BoardTheme.textMuted : BoardTheme.accent,
+                      ),
+                    ),
+                    maxLines: 1,
                   ),
                 ),
-                maxLines: 1,
               ),
-            ),
+            ]),
     );
   }
 
-  /// The driver: initials and the full name, large.
+  /// The driver: the full name only, large (no initials badge).
   Widget _driver() {
     final name = job.driver.trim();
     if (name.isEmpty) {
@@ -237,28 +243,19 @@ class PlanningRow extends StatelessWidget {
         ),
       );
     }
-    final initials =
-        name.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).take(2).map((p) => p[0]).join().toUpperCase();
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: Row(children: [
-        CircleAvatar(
-          radius: 19,
-          backgroundColor: BoardTheme.accent.withValues(alpha: 0.12),
-          child: Text(initials, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: BoardTheme.accent)),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Text.rich(
-            _marked(
-              name.toUpperCase(),
-              TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary, height: 1.15),
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text.rich(
+          _marked(
+            name.toUpperCase(),
+            TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary, height: 1.15),
           ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
-      ]),
+      ),
     );
   }
 
