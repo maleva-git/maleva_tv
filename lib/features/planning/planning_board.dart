@@ -6,28 +6,27 @@ import 'package:maleva_tv/features/board/board_theme.dart';
 import 'package:maleva_tv/features/board/job_board_view.dart';
 import 'planning_job.dart';
 
-/// Planning column widths (flex), after the fixed S.NO column - the columns of maleva_app's tablet
-/// planning grid ("All": job no, truck, driver, origin, dest, pkg/wt, customer, p.date, d.date, vessel,
-/// PIC, L ETA, O ETA, status, remarks), without its edit-only columns (tick, RTI, sort).
+/// Planning column widths (flex), after the fixed S.NO column. maleva_app's tablet planning grid,
+/// without its edit-only columns and, as the owner asked, without L ETA, O ETA and STATUS; the room
+/// goes to TRUCK and DRIVER, shown large.
 class PlanningColumns {
   PlanningColumns._();
 
   static const jobNo = 3;
-  static const truck = 3;
-  static const driver = 3;
+  static const truck = 4;
+  static const driver = 4;
   static const origin = 3;
   static const dest = 3;
   static const pkg = 3;
   static const customer = 4;
-  static const date = 2; // P.DATE, D.DATE, L ETA, O ETA
+  static const date = 2; // P.DATE, D.DATE
   static const vessel = 3;
   static const pic = 3;
-  static const status = 3;
   static const remarks = 3;
 }
 
 /// One row of the Planning grid.
-const planningRowHeight = 58.0;
+const planningRowHeight = 66.0;
 
 /// The Planning board: [BoardView] with the plan(s), one row per job in the web's order, laid out like
 /// maleva_app's tablet planning grid.
@@ -88,7 +87,7 @@ class PlanningBoardView extends StatelessWidget {
 }
 
 /// S.NO / JOB NO / TRUCK / DRIVER / ORIGIN / DEST / PKG / WT / CUSTOMER / P.DATE / D.DATE / VESSEL / PIC /
-/// L ETA / O ETA / STATUS / REMARKS - maleva_app's tablet grid headings.
+/// REMARKS.
 class PlanningColumnHeaders extends StatelessWidget {
   const PlanningColumnHeaders({super.key});
 
@@ -110,16 +109,14 @@ class PlanningColumnHeaders extends StatelessWidget {
       cell(flex: PlanningColumns.date, child: BoardHeaderRow.twoLine('D.DATE', 'DELIVERY')),
       cell(flex: PlanningColumns.vessel, child: left('VESSEL')),
       cell(flex: PlanningColumns.pic, child: left('PIC')),
-      cell(flex: PlanningColumns.date, child: BoardHeaderRow.twoLine('L ETA', 'LOADING')),
-      cell(flex: PlanningColumns.date, child: BoardHeaderRow.twoLine('O ETA', 'OFF VESSEL')),
-      cell(flex: PlanningColumns.status, child: label('STATUS')),
       cell(flex: PlanningColumns.remarks, child: left('REMARKS'), divider: false),
     ]);
   }
 }
 
-/// One planned job, one line, as a row of maleva_app's tablet grid: job no in blue, truck and driver
-/// bold. A truck's next job straight after its previous one shows the truck dimmed.
+/// One planned job on one row. The truck is a number-plate badge with its full name, the driver a
+/// large name with initials, so both read from across the room. A truck's next job straight after
+/// its previous one shows the plate outlined only.
 class PlanningRow extends StatelessWidget {
   const PlanningRow({
     required this.job,
@@ -145,7 +142,7 @@ class PlanningRow extends StatelessWidget {
       foregroundDecoration: selected ? BoxDecoration(border: Border.all(color: BoardTheme.selection, width: 3)) : null,
       decoration: BoxDecoration(
         color: selected
-            ? BoardTheme.selection.withValues(alpha: 0.14)
+            ? BoardTheme.selection.withValues(alpha: 0.12)
             : (index.isEven ? BoardTheme.rowEven : BoardTheme.rowOdd),
         border: Border(bottom: BorderSide(color: BoardTheme.gridLine)),
       ),
@@ -154,22 +151,14 @@ class PlanningRow extends StatelessWidget {
         children: [
           cell(
             width: BoardTheme.snoWidth,
-            child: Row(children: [
-              Container(width: 5, color: BoardTheme.statusColor(job.jobStatus)),
-              Expanded(
-                child: Center(
-                  child: Text('${index + 1}',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: BoardTheme.textMuted)),
-                ),
-              ),
-            ]),
+            child: Center(
+              child: Text('${index + 1}',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: BoardTheme.textMuted)),
+            ),
           ),
           cell(flex: PlanningColumns.jobNo, child: _jobNo()),
           cell(flex: PlanningColumns.truck, child: _truck()),
-          cell(
-            flex: PlanningColumns.driver,
-            child: _text(job.driver, weight: FontWeight.w700, empty: 'NO DRIVER', icon: Icons.person_outline),
-          ),
+          cell(flex: PlanningColumns.driver, child: _driver()),
           cell(flex: PlanningColumns.origin, child: _text(job.origin)),
           cell(flex: PlanningColumns.dest, child: _text(job.destination)),
           cell(flex: PlanningColumns.pkg, child: _text(job.pkg, upper: false)),
@@ -178,9 +167,6 @@ class PlanningRow extends StatelessWidget {
           cell(flex: PlanningColumns.date, child: BoardCells.time(job.delivery, now)),
           cell(flex: PlanningColumns.vessel, child: _text(job.vessel, weight: FontWeight.w700)),
           cell(flex: PlanningColumns.pic, child: _text(job.pic)),
-          cell(flex: PlanningColumns.date, child: BoardCells.time(job.leta, now)),
-          cell(flex: PlanningColumns.date, child: BoardCells.time(job.oeta, now)),
-          cell(flex: PlanningColumns.status, child: BoardCells.statusChip(job.jobStatus)),
           cell(flex: PlanningColumns.remarks, child: _text(job.remarks, upper: false), divider: false),
         ],
       ),
@@ -211,37 +197,110 @@ class PlanningRow extends StatelessWidget {
         ),
       );
 
+  /// The number plate: the full truck name, never cut - a long one shrinks to fit instead.
   Widget _truck() {
-    final none = job.truck.isEmpty;
-    final dim = none || !job.firstOfTruck;
+    if (job.truck.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: BoardTheme.warning.withValues(alpha: 0.6), width: 1.5),
+              color: BoardTheme.warning.withValues(alpha: 0.08),
+            ),
+            child: Text('NO TRUCK YET',
+                style:
+                    TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: BoardTheme.warning, letterSpacing: 1)),
+          ),
+        ),
+      );
+    }
+    final repeat = !job.firstOfTruck;
+    final ink = repeat ? BoardTheme.textSecondary : BoardTheme.textPrimary;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Row(children: [
-        Icon(Icons.local_shipping_outlined, size: 17, color: dim ? BoardTheme.textMuted : BoardTheme.accent),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text.rich(
-                _marked(
-                  none ? 'NO TRUCK' : job.truck.toUpperCase(),
-                  TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: dim ? BoardTheme.textMuted : BoardTheme.textPrimary,
-                  ),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Flexible(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                decoration: BoxDecoration(
+                  color: repeat ? Colors.transparent : BoardTheme.accent.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: repeat ? BoardTheme.border : BoardTheme.accent, width: 2),
                 ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.local_shipping_rounded,
+                        size: 20, color: repeat ? BoardTheme.textMuted : BoardTheme.accent),
+                    const SizedBox(width: 8),
+                    Text.rich(
+                      _marked(
+                        job.truck.toUpperCase(),
+                        TextStyle(
+                            fontSize: 21, fontWeight: FontWeight.w900, color: ink, letterSpacing: 1.2, height: 1.1),
+                      ),
+                      maxLines: 1,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          if (job.truckSize.isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(job.truckSize.toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-              ),
-              if (job.truckSize.isNotEmpty)
-                Text(job.truckSize.toUpperCase(),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: BoardTheme.textMuted)),
-            ],
+                style: TextStyle(
+                    fontSize: 11, fontWeight: FontWeight.w800, color: BoardTheme.textMuted, letterSpacing: 1)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// The driver: initials and the full name, large.
+  Widget _driver() {
+    final name = job.driver.trim();
+    if (name.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text('NO DRIVER YET',
+              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: BoardTheme.warning, letterSpacing: 1)),
+        ),
+      );
+    }
+    final initials =
+        name.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).take(2).map((p) => p[0]).join().toUpperCase();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Row(children: [
+        CircleAvatar(
+          radius: 17,
+          backgroundColor: BoardTheme.accent.withValues(alpha: 0.12),
+          child: Text(initials, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: BoardTheme.accent)),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text.rich(
+            _marked(
+              name.toUpperCase(),
+              TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary, height: 1.1),
+            ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ),
       ]),
@@ -249,8 +308,7 @@ class PlanningRow extends StatelessWidget {
   }
 
   /// A plain cell: up to two lines, cut with "…".
-  Widget _text(String value,
-      {FontWeight weight = FontWeight.w500, bool upper = true, String empty = '—', IconData? icon}) {
+  Widget _text(String value, {FontWeight weight = FontWeight.w500, bool upper = true}) {
     final missing = value.trim().isEmpty;
     final style = TextStyle(
       fontSize: 14,
@@ -258,18 +316,16 @@ class PlanningRow extends StatelessWidget {
       color: missing ? BoardTheme.textMuted : BoardTheme.textPrimary,
       height: 1.15,
     );
-    final text = missing ? empty : (upper ? value.toUpperCase() : value);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
-      child: Row(children: [
-        if (icon != null && !missing) ...[
-          Icon(icon, size: 15, color: BoardTheme.textSecondary),
-          const SizedBox(width: 5)
-        ],
-        Expanded(
-          child: Text.rich(_marked(text, style), maxLines: 2, overflow: TextOverflow.ellipsis),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Text.rich(
+          _marked(missing ? '—' : (upper ? value.toUpperCase() : value), style),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
-      ]),
+      ),
     );
   }
 }
