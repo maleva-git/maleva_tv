@@ -29,7 +29,10 @@ class _AuthGate extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return switch (ref.watch(tvAuthProvider)) {
+    final auth = ref.watch(tvAuthProvider);
+    // The sign-in and start screens use the navy colours; the boards set their own.
+    if (auth is! SignedIn) BoardTheme.palette = BoardPalette.navy;
+    return switch (auth) {
       SignedIn() => const MainNavigationScreen(),
       SignedOut(:final message, :final userName) =>
         SignInScreen(key: ValueKey(message), message: message, userName: userName),
@@ -38,12 +41,12 @@ class _AuthGate extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator(color: BoardTheme.accent),
+                CircularProgressIndicator(color: BoardTheme.accent),
                 const SizedBox(height: 20),
                 Text(
                   message == null ? 'Starting…' : 'Connecting to the server…\n$message',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 18, color: BoardTheme.textSecondary),
+                  style: TextStyle(fontSize: 18, color: BoardTheme.textSecondary),
                 ),
               ],
             ),

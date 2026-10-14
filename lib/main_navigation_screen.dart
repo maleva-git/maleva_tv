@@ -10,6 +10,7 @@ import 'features/planning/planning_board.dart';
 import 'features/planning/plan_picker.dart';
 import 'features/planning/planning_controller.dart';
 import 'features/planning/planning_live.dart';
+import 'features/planning/truck_summary.dart';
 
 /// The vessel planning board and the remote control.
 ///
@@ -274,6 +275,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       _switchBoard();
       return KeyEventResult.handled;
     }
+    if (event is KeyDownEvent &&
+        key == LogicalKeyboardKey.colorF0Red &&
+        ref.read(boardProvider) == BoardKind.planning) {
+      _openTruckDetails();
+      return KeyEventResult.handled;
+    }
     if (event is KeyDownEvent && key == LogicalKeyboardKey.colorF1Green) {
       // the port filter belongs to Vessel Planning only
       // green picks each board's own filter: the port on Vessel Planning, the plan on Planning
@@ -337,6 +344,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final search = ref.watch(searchProvider);
     final board = ref.watch(boardProvider);
+    // Each board's own colours: Planning follows maleva_app's Planning screens, Vessel Planning stays navy.
+    BoardTheme.palette = board == BoardKind.planning ? BoardPalette.malevaLight : BoardPalette.navy;
     final controls = Row(children: [
       _modePill(),
       if (board == BoardKind.planning) ...[const SizedBox(width: 10), _livePill()],
@@ -380,6 +389,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                     search: search,
                     searchBar: searchBar,
                     titleWidget: _boardTabs(board, _planningSubtitle()),
+                    belowTitle: TruckSummaryBar(onDetails: _openTruckDetails),
                   )
                 : JobBoardView(
                     key: const ValueKey(BoardKind.vesselPlanning),
@@ -462,7 +472,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           const SizedBox(height: 3),
           Text(subtitle.toUpperCase(),
               maxLines: 1,
-              style: const TextStyle(
+              style: TextStyle(
                   fontSize: 10, fontWeight: FontWeight.w600, color: BoardTheme.textSecondary, letterSpacing: 1.2)),
         ],
       ),
@@ -525,7 +535,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 autocorrect: false,
                 enableSuggestions: false,
                 cursorColor: BoardTheme.selection,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 17, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary, letterSpacing: 1),
                 decoration: InputDecoration(
                   isDense: true,
@@ -533,14 +543,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   hintText: planning
                       ? 'PRESS MENU TO SEARCH TRUCK, DRIVER, VESSEL OR JOB NO.'
                       : 'PRESS MENU TO SEARCH VESSEL OR JOB NO.',
-                  hintStyle: const TextStyle(
+                  hintStyle: TextStyle(
                       fontSize: 14, fontWeight: FontWeight.w700, color: BoardTheme.textMuted, letterSpacing: 1),
                 ),
               ),
             ),
           ),
           if (search.isNotEmpty && jobs.isLoading)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(right: 8),
               child: SizedBox(
                   width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: BoardTheme.accent)),
@@ -564,13 +574,25 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               tooltip: 'Close search',
               visualDensity: VisualDensity.compact,
               onPressed: _closeSearch,
-              icon: const Icon(Icons.close_rounded, size: 20, color: BoardTheme.textSecondary),
+              icon: Icon(Icons.close_rounded, size: 20, color: BoardTheme.textSecondary),
             )
           else
             const SizedBox(width: 8),
         ],
       ),
     );
+  }
+
+  // ---------- Truck details (Planning) ----------
+
+  Future<void> _openTruckDetails() async {
+    _takeControl();
+    await showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.5),
+      builder: (_) => const TruckDetailsDialog(),
+    );
+    if (mounted) _focus.requestFocus();
   }
 
   // ---------- Plan choice (Planning) ----------
@@ -620,9 +642,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   Widget _livePill() {
     final status = ref.watch(liveStatusProvider);
     final (Color color, String text) = switch (status) {
-      LiveStatus.live => (const Color(0xFF4ADE80), 'LIVE · PLAN SAVES SHOW AT ONCE'),
+      LiveStatus.live => (BoardTheme.success, 'LIVE · PLAN SAVES SHOW AT ONCE'),
       LiveStatus.connecting => (BoardTheme.soon, 'CONNECTING LIVE…'),
-      LiveStatus.offline => (const Color(0xFFF87171), 'LIVE OFF · RETRYING · REFRESH EVERY MIN'),
+      LiveStatus.offline => (BoardTheme.danger, 'LIVE OFF · RETRYING · REFRESH EVERY MIN'),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -695,12 +717,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             color:
                 active ? const Color(0xFF22C55E).withValues(alpha: 0.16) : BoardTheme.background.withValues(alpha: 0.7),
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: active ? const Color(0xFF4ADE80) : BoardTheme.border, width: 1.5),
+            border: Border.all(color: active ? BoardTheme.success : BoardTheme.border, width: 1.5),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 20, color: active ? const Color(0xFF4ADE80) : BoardTheme.textSecondary),
+              Icon(icon, size: 20, color: active ? BoardTheme.success : BoardTheme.textSecondary),
               const SizedBox(width: 8),
               Flexible(
                 child: Column(
@@ -708,14 +730,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(label,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 9, fontWeight: FontWeight.w800, color: BoardTheme.textMuted, letterSpacing: 1.4)),
                     Flexible(
                       child: Text(
                         value,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w800,
                             color: BoardTheme.textPrimary,
@@ -731,7 +753,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 height: 10,
                 decoration: const BoxDecoration(color: Color(0xFF22C55E), shape: BoxShape.circle),
               ),
-              const Icon(Icons.arrow_drop_down_rounded, size: 22, color: BoardTheme.textSecondary),
+              Icon(Icons.arrow_drop_down_rounded, size: 22, color: BoardTheme.textSecondary),
             ],
           ),
         ),
@@ -746,7 +768,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final IconData icon;
     final String text;
     if (_auto) {
-      color = const Color(0xFF4ADE80);
+      color = BoardTheme.success;
       icon = Icons.play_circle_rounded;
       text = 'AUTO · SCROLLING';
     } else {
@@ -794,7 +816,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               ),
               const SizedBox(width: 4),
               Text(label,
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 10, fontWeight: FontWeight.w700, color: BoardTheme.textSecondary, letterSpacing: 1)),
             ],
           ),
@@ -808,16 +830,16 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         );
     return [
       key(icons(Icons.keyboard_arrow_up_rounded, Icons.keyboard_arrow_down_rounded), 'ROWS · HOLD = FAST'),
-      key(
-          const Text('CH ±',
-              style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
+      key(Text('CH ±', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
           'PAGE'),
       key(icons(Icons.keyboard_arrow_left_rounded, Icons.keyboard_arrow_right_rounded), 'CHANGE DATE'),
-      key(const Icon(Icons.search_rounded, size: 13, color: BoardTheme.textPrimary), 'MENU / BLUE: SEARCH'),
+      key(Icon(Icons.search_rounded, size: 13, color: BoardTheme.textPrimary), 'MENU / BLUE: SEARCH'),
       key(const Icon(Icons.circle, size: 10, color: Color(0xFF22C55E)),
           ref.watch(boardProvider) == BoardKind.vesselPlanning ? 'GREEN: PORT' : 'GREEN: PLAN'),
+      if (ref.watch(boardProvider) == BoardKind.planning)
+        key(const Icon(Icons.circle, size: 10, color: Color(0xFFEF4444)), 'RED: TRUCKS'),
       key(const Icon(Icons.circle, size: 10, color: Color(0xFFFACC15)), 'YELLOW: BOARD'),
-      key(const Text('OK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
+      key(Text('OK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
           _auto ? 'PAUSE' : 'BACK TO AUTO'),
     ];
   }

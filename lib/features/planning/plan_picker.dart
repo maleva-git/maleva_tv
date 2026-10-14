@@ -145,7 +145,7 @@ class _PlanPickerState extends ConsumerState<PlanPicker> {
           insetPadding: const EdgeInsets.all(40),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: BoardTheme.border, width: 1.5),
+            side: BorderSide(color: BoardTheme.border, width: 1.5),
           ),
           // Laid out at a fixed size and scaled down evenly in a small window, like the board.
           child: FittedBox(
@@ -158,9 +158,9 @@ class _PlanPickerState extends ConsumerState<PlanPicker> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Row(
+                    Row(
                       children: [
-                        Icon(Icons.assignment_rounded, color: Color(0xFF4ADE80), size: 26),
+                        Icon(Icons.assignment_rounded, color: BoardTheme.success, size: 26),
                         SizedBox(width: 10),
                         Text('SHOW PLAN',
                             style: TextStyle(
@@ -171,17 +171,17 @@ class _PlanPickerState extends ConsumerState<PlanPicker> {
                       ],
                     ),
                     const SizedBox(height: 4),
-                    const Text('Type a plan number with the number keys, or pick a plan of the day.',
+                    Text('Type a plan number with the number keys, or pick a plan of the day.',
                         style: TextStyle(fontSize: 13, color: BoardTheme.textSecondary)),
                     const SizedBox(height: 14),
                     _numberBox(),
                     if (_error != null) ...[
                       const SizedBox(height: 8),
-                      Text(_error!, style: const TextStyle(fontSize: 14, color: Color(0xFFFCA5A5))),
+                      Text(_error!, style: TextStyle(fontSize: 14, color: BoardTheme.danger)),
                     ],
                     const SizedBox(height: 14),
                     Text('PLANS OF ${BoardTheme.relativeDay(day, DateTime.now())} · ${BoardTheme.dayMonth(day)}',
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w800,
                             color: BoardTheme.textMuted,
@@ -189,7 +189,7 @@ class _PlanPickerState extends ConsumerState<PlanPicker> {
                     const SizedBox(height: 8),
                     Expanded(child: _list(plans, options)),
                     const SizedBox(height: 10),
-                    const Text('0-9  PLAN NO.     UP / DOWN  MOVE     OK  OPEN     BACK  CLEAR / CLOSE',
+                    Text('0-9  PLAN NO.     UP / DOWN  MOVE     OK  OPEN     BACK  CLEAR / CLOSE',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                             fontSize: 12, fontWeight: FontWeight.w700, color: BoardTheme.textMuted, letterSpacing: 1)),
@@ -216,7 +216,7 @@ class _PlanPickerState extends ConsumerState<PlanPicker> {
       ),
       child: Row(
         children: [
-          const Text('PLAN NO.',
+          Text('PLAN NO.',
               style: TextStyle(
                   fontSize: 13, fontWeight: FontWeight.w800, color: BoardTheme.textMuted, letterSpacing: 1.4)),
           const SizedBox(width: 16),
@@ -233,10 +233,9 @@ class _PlanPickerState extends ConsumerState<PlanPicker> {
             ),
           ),
           if (_checking)
-            const SizedBox(
-                width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 3, color: BoardTheme.accent))
+            SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 3, color: BoardTheme.accent))
           else if (typing)
-            const Text('OK = OPEN',
+            Text('OK = OPEN',
                 style: TextStyle(
                     fontSize: 13, fontWeight: FontWeight.w800, color: BoardTheme.selection, letterSpacing: 1.2)),
         ],
@@ -246,13 +245,13 @@ class _PlanPickerState extends ConsumerState<PlanPicker> {
 
   Widget _list(AsyncValue<List<PlanSummary>> plans, List<PlanPick> options) {
     if (plans.isLoading && !plans.hasValue) {
-      return const Center(child: CircularProgressIndicator(color: BoardTheme.accent));
+      return Center(child: CircularProgressIndicator(color: BoardTheme.accent));
     }
     if (plans.hasError && !plans.hasValue) {
       final e = plans.error;
       return Center(
         child: Text('Cannot load the plans: ${e is ApiException ? e.message : e}',
-            textAlign: TextAlign.center, style: const TextStyle(fontSize: 16, color: Color(0xFFFCA5A5))),
+            textAlign: TextAlign.center, style: TextStyle(fontSize: 16, color: BoardTheme.danger)),
       );
     }
     final byNumber = {for (final p in plans.valueOrNull ?? const <PlanSummary>[]) p.number: p};
@@ -303,7 +302,7 @@ class _PlanPickerState extends ConsumerState<PlanPicker> {
                           ].join('  ·  '),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
                               color: BoardTheme.textMuted,
@@ -313,12 +312,12 @@ class _PlanPickerState extends ConsumerState<PlanPicker> {
                   ),
                 ),
                 if (current)
-                  const Row(children: [
-                    Icon(Icons.check_circle_rounded, size: 18, color: Color(0xFF4ADE80)),
+                  Row(children: [
+                    Icon(Icons.check_circle_rounded, size: 18, color: BoardTheme.success),
                     SizedBox(width: 6),
                     Text('SHOWING',
                         style: TextStyle(
-                            fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF4ADE80), letterSpacing: 1)),
+                            fontSize: 11, fontWeight: FontWeight.w800, color: BoardTheme.success, letterSpacing: 1)),
                   ]),
               ],
             ),

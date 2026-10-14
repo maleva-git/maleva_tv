@@ -6,6 +6,7 @@ import 'package:maleva_tv/core/session/tv_auth_service.dart';
 import 'package:maleva_tv/features/planning/planning_api.dart';
 import 'package:maleva_tv/features/planning/planning_controller.dart';
 import 'package:maleva_tv/features/planning/planning_job.dart';
+import 'package:maleva_tv/features/planning/truck_fleet.dart';
 import 'package:maleva_tv/features/home/domain/entities/job_model.dart';
 import 'package:maleva_tv/features/home/presentation/home_controller.dart';
 import 'package:maleva_tv/main_navigation_screen.dart';
@@ -22,6 +23,9 @@ void main() {
         return query.isEmpty ? jobs : jobs.where((job) => matchesSearch(job, query)).toList();
       }),
       planningApiProvider.overrideWithValue(_SamplePlanningApi()),
+      fleetProvider.overrideWith((ref) async => [
+            for (final (i, name) in _fleet.indexed) FleetTruck(id: i + 1, name: name),
+          ]),
       portsProvider.overrideWith((ref) async => ['NORTHPORT-W5', 'PTP-J33', 'SOUTHPORT-B11', 'WESTPORT-B18']),
     ],
     child: const MaterialApp(debugShowCheckedModeBanner: false, home: MainNavigationScreen()),
@@ -104,9 +108,10 @@ class _SamplePlanningApi extends PlanningApi {
       return '${t.year}-${two(t.month)}-${two(t.day)} ${two(t.hour)}:${two(t.minute)}';
     }
 
+    int truckId(String name) => name.isEmpty ? 0 : _fleet.indexOf(name) + 1;
     final rows = [
       (
-        'WXY 1234',
+        'BPR 7151',
         'RAMU',
         'MY002605899',
         'PETRONAS DAGANGAN',
@@ -118,7 +123,7 @@ class _SamplePlanningApi extends PlanningApi {
         30
       ),
       (
-        'WXY 1234',
+        'BPR 7151',
         'RAMU',
         'MY002605901',
         'SHELL MALAYSIA',
@@ -130,7 +135,7 @@ class _SamplePlanningApi extends PlanningApi {
         120
       ),
       (
-        'BKA 5521',
+        'UMS 7151',
         'MUTHU SAMY',
         'MY002605902',
         'MAERSK LINE',
@@ -142,7 +147,7 @@ class _SamplePlanningApi extends PlanningApi {
         200
       ),
       (
-        'BKA 5521',
+        'UMS 7151',
         'MUTHU SAMY',
         'MY002605910',
         'ACME SHIP SUPPLY',
@@ -154,7 +159,7 @@ class _SamplePlanningApi extends PlanningApi {
         330
       ),
       (
-        'JHB 777',
+        'GM 7151',
         'HAFIZ RAHMAN',
         'MY002605915',
         'KONTENA NASIONAL',
@@ -186,6 +191,7 @@ class _SamplePlanningApi extends PlanningApi {
           jobNo: r.$3,
           jobStatus: r.$8,
           truck: r.$1,
+          truckId: truckId(r.$1),
           driver: r.$2,
           customer: r.$4,
           origin: r.$5,
@@ -199,3 +205,10 @@ class _SamplePlanningApi extends PlanningApi {
     ];
   }
 }
+
+
+const _fleet = [
+  'APL7151', 'BNU 7151', 'BPR 7151', 'GM 7151', 'GOLD 7151', 'JPM 7151', 'JQV 7151', 'JQX 7151', 'JTB 7151',
+  'JWS 7151', 'JYW7151', 'NDU 5183', 'NEL7151', 'QD 7151', 'SP 7151', 'UKM7151', 'UMS 7151', 'V6358MY',
+  'VIPS 7151', 'VR 7151',
+];

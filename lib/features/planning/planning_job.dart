@@ -6,6 +6,7 @@ class PlanningJob {
     required this.jobNo,
     this.jobStatus = '',
     this.truck = '',
+    this.truckId = 0,
     this.driver = '',
     this.customer = '',
     this.origin = '',
@@ -25,6 +26,9 @@ class PlanningJob {
 
   /// `TruckName` (truck master), else the typed `TruckNameD`.
   final String truck;
+
+  /// `TruckRefid`: the truck master id, 0 when no truck is set (what the web's truck summary counts).
+  final int truckId;
 
   /// `DriverName`, else the typed `DriverNameD`.
   final String driver;
@@ -54,6 +58,7 @@ class PlanningJob {
         jobNo: jobNo,
         jobStatus: jobStatus,
         truck: truck,
+        truckId: truckId,
         driver: driver,
         customer: customer,
         origin: origin,
@@ -75,6 +80,7 @@ class PlanningJob {
       jobNo: text('JobNo'),
       jobStatus: text('JobStatus'),
       truck: either('TruckName', 'TruckNameD'),
+      truckId: int.tryParse('${json['TruckRefid'] ?? json['TruckRefId'] ?? ''}') ?? 0,
       driver: either('DriverName', 'DriverNameD'),
       customer: text('CustomerName'),
       origin: either('OriginD', 'Origin'),

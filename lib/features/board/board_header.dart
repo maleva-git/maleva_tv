@@ -3,19 +3,19 @@ import 'board_theme.dart';
 
 /// The grid's heading row, shared by every board: same height, fill and bottom line.
 class BoardHeaderRow extends StatelessWidget {
-  const BoardHeaderRow({required this.children, super.key});
+  BoardHeaderRow({required this.children, super.key});
 
   /// [BoardTheme.cell]s, with the same widths as the board's rows.
   final List<Widget> children;
 
   static const height = 66.0;
 
-  static const style = TextStyle(
-    fontSize: 12,
-    fontWeight: FontWeight.w800,
-    color: BoardTheme.textPrimary,
-    letterSpacing: 1.6,
-  );
+  static TextStyle get style => TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w800,
+        color: BoardTheme.textPrimary,
+        letterSpacing: 1.6,
+      );
 
   /// One heading; shrinks rather than overflow a narrow column.
   static Widget label(String text, {Alignment align = Alignment.center}) => Align(
@@ -37,7 +37,7 @@ class BoardHeaderRow extends StatelessWidget {
               children: [
                 Text(code, style: style.copyWith(fontSize: 13)),
                 Text(meaning,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         color: BoardTheme.textSecondary,
@@ -52,7 +52,7 @@ class BoardHeaderRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: height,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: BoardTheme.headerFill,
         border: Border(bottom: BorderSide(color: BoardTheme.accent, width: 2)),
       ),
@@ -80,7 +80,7 @@ class VesselColumnHeaders extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 6),
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.14),
-                  border: const Border(bottom: BorderSide(color: BoardTheme.gridLine)),
+                  border: Border(bottom: BorderSide(color: BoardTheme.gridLine)),
                 ),
                 child: FittedBox(
                   fit: BoxFit.scaleDown,

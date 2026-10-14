@@ -35,7 +35,7 @@ class JobBoardItem extends StatelessWidget {
         color: selected
             ? BoardTheme.selection.withValues(alpha: 0.22)
             : (index.isEven ? BoardTheme.rowEven : BoardTheme.rowOdd),
-        border: const Border(bottom: BorderSide(color: BoardTheme.gridLine)),
+        border: Border(bottom: BorderSide(color: BoardTheme.gridLine)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -50,7 +50,7 @@ class JobBoardItem extends StatelessWidget {
                   child: Center(
                     child: Text(
                       '${index + 1}',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: BoardTheme.textMuted),
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: BoardTheme.textMuted),
                     ),
                   ),
                 ),
@@ -114,7 +114,7 @@ class JobBoardItem extends StatelessWidget {
                   Text.rich(
                     _marked(
                       second,
-                      const TextStyle(
+                      TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: BoardTheme.textSecondary,
@@ -142,7 +142,7 @@ class JobBoardItem extends StatelessWidget {
       if (off.isNotEmpty && off != load) ('O', off),
     ];
     if (lines.isEmpty) {
-      return const Center(child: Text('—', style: TextStyle(fontSize: 18, color: BoardTheme.textMuted)));
+      return Center(child: Text('—', style: TextStyle(fontSize: 18, color: BoardTheme.textMuted)));
     }
     Widget line(String side, String name) => Row(
           children: [
@@ -159,8 +159,8 @@ class JobBoardItem extends StatelessWidget {
                 name.toUpperCase(),
                 maxLines: lines.length > 1 ? 1 : 2,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.w700, color: BoardTheme.textPrimary, height: 1.05),
+                style:
+                    TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: BoardTheme.textPrimary, height: 1.05),
               ),
             ),
           ],
@@ -198,7 +198,7 @@ class JobBoardItem extends StatelessWidget {
             child: Text.rich(
               _marked(
                 text.isEmpty ? '—' : text,
-                const TextStyle(
+                TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: BoardTheme.textPrimary,
@@ -217,7 +217,7 @@ class JobBoardItem extends StatelessWidget {
     // The person in charge (PICName, from EmployeeRefId), as the owner chose (2026-10-14).
     final name = job.picName.trim();
     if (name.isEmpty) {
-      return const Center(
+      return Center(
         child: Text('UNASSIGNED',
             style:
                 TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: BoardTheme.textMuted, letterSpacing: 1.2)),
@@ -233,7 +233,7 @@ class JobBoardItem extends StatelessWidget {
             radius: 15,
             backgroundColor: BoardTheme.panelHigh,
             child: Text(initials,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: BoardTheme.textSecondary)),
+                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: BoardTheme.textSecondary)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -241,8 +241,7 @@ class JobBoardItem extends StatelessWidget {
               name,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w600, color: BoardTheme.textPrimary, height: 1.15),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: BoardTheme.textPrimary, height: 1.15),
             ),
           ),
         ],

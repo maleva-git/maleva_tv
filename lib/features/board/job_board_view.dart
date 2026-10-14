@@ -30,6 +30,7 @@ class BoardView<T> extends StatefulWidget {
     required this.rowBuilder,
     this.titleWidget,
     this.noMatchTitle = 'Nothing matches',
+    this.belowTitle,
     super.key,
   });
 
@@ -65,6 +66,9 @@ class BoardView<T> extends StatefulWidget {
 
   /// The empty-list heading while searching, e.g. 'No vessel matches'.
   final String noMatchTitle;
+
+  /// A bar between the title bar and the grid, e.g. Planning's truck summary.
+  final Widget? belowTitle;
 
   @override
   State<BoardView<T>> createState() => _BoardViewState<T>();
@@ -151,7 +155,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: RadialGradient(
           center: Alignment(-0.8, -1.2),
           radius: 1.8,
@@ -166,6 +170,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
               child: Column(
                 children: [
                   _titleBar(),
+                  if (widget.belowTitle != null) ...[const SizedBox(height: 10), widget.belowTitle!],
                   const SizedBox(height: 12),
                   Expanded(child: _table()),
                   const SizedBox(height: 4),
@@ -200,7 +205,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
       height: 58,
       padding: const EdgeInsets.symmetric(horizontal: 18),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           colors: [BoardTheme.panelHigh, BoardTheme.panel],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -237,7 +242,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
         Text(
           widget.title,
           maxLines: 1,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w900,
             color: BoardTheme.textPrimary,
@@ -252,7 +257,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
             const SizedBox(width: 7),
             Text(widget.subtitle.toUpperCase(),
                 maxLines: 1,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 10, fontWeight: FontWeight.w600, color: BoardTheme.textSecondary, letterSpacing: 1.2)),
           ],
         ),
@@ -271,7 +276,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
           children: [
             Text(
               '${BoardTheme.two(_now.hour)}:${BoardTheme.two(_now.minute)}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
                 color: BoardTheme.textPrimary,
@@ -282,7 +287,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
             const SizedBox(width: 3),
             Text(
               BoardTheme.two(_now.second),
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w700,
                 color: BoardTheme.textMuted,
@@ -293,7 +298,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
         ),
         const SizedBox(height: 1),
         Text('${BoardTheme.weekday(_now)} · ${BoardTheme.dayMonth(_now)}',
-            style: const TextStyle(
+            style: TextStyle(
                 fontSize: 10, fontWeight: FontWeight.w700, color: BoardTheme.textSecondary, letterSpacing: 1.1)),
       ],
     );
@@ -323,11 +328,11 @@ class _BoardViewState<T> extends State<BoardView<T>> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(BoardTheme.relativeDay(d, _now),
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 9, fontWeight: FontWeight.w800, color: BoardTheme.accent, letterSpacing: 1.4)),
               Text(
                 '${BoardTheme.two(d.day)}/${BoardTheme.two(d.month)}/${d.year}',
-                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary),
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary),
               ),
             ],
           ),
@@ -363,13 +368,13 @@ class _BoardViewState<T> extends State<BoardView<T>> {
     return widget.jobs.when(
       skipLoadingOnRefresh: true,
       skipLoadingOnReload: true, // keep the rows while a new search or day loads
-      loading: () => const Center(
+      loading: () => Center(
         child:
             SizedBox(width: 56, height: 56, child: CircularProgressIndicator(color: BoardTheme.accent, strokeWidth: 5)),
       ),
       error: (error, _) => _message(
         icon: Icons.cloud_off_rounded,
-        color: const Color(0xFFF87171),
+        color: BoardTheme.danger,
         title: 'Cannot load the board',
         detail: error is ApiException ? error.message : '$error',
       ),
@@ -436,11 +441,9 @@ class _BoardViewState<T> extends State<BoardView<T>> {
               child: Icon(icon, size: 52, color: color),
             ),
             const SizedBox(height: 20),
-            Text(title,
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
+            Text(title, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
             const SizedBox(height: 10),
-            Text(detail,
-                textAlign: TextAlign.center, style: const TextStyle(fontSize: 19, color: BoardTheme.textSecondary)),
+            Text(detail, textAlign: TextAlign.center, style: TextStyle(fontSize: 19, color: BoardTheme.textSecondary)),
           ],
         ),
       ),
@@ -459,7 +462,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
                 width: 8, height: 8, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
             const SizedBox(width: 7),
             Text(label,
-                style: const TextStyle(
+                style: TextStyle(
                     fontSize: 10, fontWeight: FontWeight.w600, color: BoardTheme.textSecondary, letterSpacing: 1)),
             const SizedBox(width: 12),
           ],
@@ -486,7 +489,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
                   legend(BoardTheme.textPrimary, 'UPCOMING'),
                   legend(BoardTheme.textMuted, 'PASSED'),
                   if (widget.jobs.isRefreshing)
-                    const Padding(
+                    Padding(
                       padding: EdgeInsets.only(right: 8),
                       child: SizedBox(
                           width: 14,
@@ -497,7 +500,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
                     updated == null
                         ? 'REFRESH EVERY MINUTE'
                         : 'UPDATED ${BoardTheme.two(updated.hour)}:${BoardTheme.two(updated.minute)}',
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 10, fontWeight: FontWeight.w600, color: BoardTheme.textMuted, letterSpacing: 1),
                   ),
                 ],
@@ -534,9 +537,9 @@ class _LiveDotState extends State<_LiveDot> with SingleTickerProviderStateMixin 
         width: 10,
         height: 10,
         decoration: BoxDecoration(
-          color: const Color(0xFF4ADE80),
+          color: BoardTheme.success,
           shape: BoxShape.circle,
-          boxShadow: [BoxShadow(color: const Color(0xFF4ADE80).withValues(alpha: 0.8), blurRadius: 8)],
+          boxShadow: [BoxShadow(color: BoardTheme.success.withValues(alpha: 0.8), blurRadius: 8)],
         ),
       ),
     );

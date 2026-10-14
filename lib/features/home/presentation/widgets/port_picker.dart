@@ -86,7 +86,7 @@ class _PortPickerState extends ConsumerState<PortPicker> {
         insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 40),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(color: BoardTheme.border, width: 1.5),
+          side: BorderSide(color: BoardTheme.border, width: 1.5),
         ),
         // Laid out at a fixed size and scaled down evenly in a small window, like the board.
         child: FittedBox(
@@ -99,9 +99,9 @@ class _PortPickerState extends ConsumerState<PortPicker> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.anchor_rounded, color: Color(0xFF4ADE80), size: 26),
+                      Icon(Icons.anchor_rounded, color: BoardTheme.success, size: 26),
                       SizedBox(width: 10),
                       Text('SHOW PORT',
                           style: TextStyle(
@@ -112,12 +112,12 @@ class _PortPickerState extends ConsumerState<PortPicker> {
                     ],
                   ),
                   const SizedBox(height: 4),
-                  const Text('The board shows only vessels at the port you pick (loading or off-vessel port).',
+                  Text('The board shows only vessels at the port you pick (loading or off-vessel port).',
                       style: TextStyle(fontSize: 13, color: BoardTheme.textSecondary)),
                   const SizedBox(height: 14),
                   Expanded(child: _list(ports, options)),
                   const SizedBox(height: 12),
-                  const Text('UP / DOWN  MOVE     OK  SHOW THIS PORT     BACK  CLOSE',
+                  Text('UP / DOWN  MOVE     OK  SHOW THIS PORT     BACK  CLOSE',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                           fontSize: 12, fontWeight: FontWeight.w700, color: BoardTheme.textMuted, letterSpacing: 1)),
@@ -132,7 +132,7 @@ class _PortPickerState extends ConsumerState<PortPicker> {
 
   Widget _list(AsyncValue<List<String>> ports, List<String> options) {
     if (ports.isLoading && !ports.hasValue) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.all(30),
         child: Center(child: CircularProgressIndicator(color: BoardTheme.accent)),
       );
@@ -144,7 +144,7 @@ class _PortPickerState extends ConsumerState<PortPicker> {
         child: Text(
           'Cannot load the ports: ${error is ApiException ? error.message : error}',
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 16, color: Color(0xFFFCA5A5)),
+          style: TextStyle(fontSize: 16, color: BoardTheme.danger),
         ),
       );
     }
@@ -186,13 +186,13 @@ class _PortPickerState extends ConsumerState<PortPicker> {
                   ),
                 ),
                 if (current)
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.check_circle_rounded, size: 18, color: Color(0xFF4ADE80)),
+                      Icon(Icons.check_circle_rounded, size: 18, color: BoardTheme.success),
                       SizedBox(width: 6),
                       Text('SHOWING',
                           style: TextStyle(
-                              fontSize: 11, fontWeight: FontWeight.w800, color: Color(0xFF4ADE80), letterSpacing: 1)),
+                              fontSize: 11, fontWeight: FontWeight.w800, color: BoardTheme.success, letterSpacing: 1)),
                     ],
                   ),
               ],

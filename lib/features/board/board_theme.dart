@@ -5,20 +5,25 @@ import 'package:flutter/material.dart';
 class BoardTheme {
   BoardTheme._();
 
-  // Royal-blue palette on a darker navy base: white text stands out and the TV shows less glare.
-  // Alternate rows differ clearly so the eye can follow one job across the grid.
-  static const background = Color(0xFF020B24);
-  static const backgroundEnd = Color(0xFF07194A);
-  static const panel = Color(0xFF0A1F52);
-  static const panelHigh = Color(0xFF1746B0);
-  static const rowEven = Color(0xFF0E2A66);
-  static const rowOdd = Color(0xFF061536);
-  static const border = Color(0xFF2456C2);
-  static const accent = Color(0xFF5AB0FF);
-  static const soon = Color(0xFFFBBF24);
-  static const textPrimary = Colors.white;
-  static const textSecondary = Color(0xFFC6D7F7);
-  static const textMuted = Color(0xFF8AA3D6);
+  /// The colours in use. Each board sets its own before it builds (see [BoardPalette]); the
+  /// sign-in screen and Vessel Planning use [BoardPalette.navy], Planning [BoardPalette.malevaLight].
+  static BoardPalette palette = BoardPalette.navy;
+
+  static Color get background => palette.background;
+  static Color get backgroundEnd => palette.backgroundEnd;
+  static Color get panel => palette.panel;
+  static Color get panelHigh => palette.panelHigh;
+  static Color get rowEven => palette.rowEven;
+  static Color get rowOdd => palette.rowOdd;
+  static Color get border => palette.border;
+  static Color get accent => palette.accent;
+  static Color get soon => palette.soon;
+  static Color get textPrimary => palette.textPrimary;
+  static Color get textSecondary => palette.textSecondary;
+  static Color get textMuted => palette.textMuted;
+  static Color get success => palette.success;
+  static Color get danger => palette.danger;
+  static Color get warning => palette.warning;
 
   /// Column layout, in display order. `snoWidth` is fixed; the rest are flex values.
   static const snoWidth = 64.0;
@@ -31,46 +36,25 @@ class BoardTheme {
   static const timeGroup = time * 3; // ETA + ETB + ETD of one vessel
 
   /// Grid lines between columns and rows, and the header row's fill.
-  static const gridLine = Color(0xFF1F4BA8);
-  static const headerFill = Color(0xFF123A8F);
-  static const offVessel = Color(0xFFC4B5FD);
+  static Color get gridLine => palette.gridLine;
+  static Color get headerFill => palette.headerFill;
+  static Color get offVessel => palette.offVessel;
 
   /// The row or control picked with the remote: bright, so it is seen from across the room.
-  static const selection = Color(0xFF22D3EE);
+  static Color get selection => palette.selection;
 
   /// One table cell with a grid line on its right; the last cell of a row has none.
   /// Header and rows both use it, so their columns line up to the pixel.
   static Widget cell({int? flex, double? width, required Widget child, bool divider = true}) {
     final box = Container(
       width: width,
-      decoration: divider ? const BoxDecoration(border: Border(right: BorderSide(color: gridLine))) : null,
+      decoration: divider ? BoxDecoration(border: Border(right: BorderSide(color: gridLine))) : null,
       child: child,
     );
     return width != null ? box : Expanded(flex: flex ?? 1, child: box);
   }
 
-  static Color statusColor(String status) {
-    switch (status.trim().toUpperCase()) {
-      case 'ASSIGNED':
-        return const Color(0xFF60A5FA);
-      case 'IN TRANSIT':
-      case 'STARTED':
-      case 'ONGOING':
-        return const Color(0xFFFB923C);
-      case 'COMPLETED':
-      case 'DELIVERED':
-      case 'CLOSED':
-        return const Color(0xFF4ADE80);
-      case 'PENDING':
-      case 'OPEN':
-        return const Color(0xFFFACC15);
-      case 'CANCELLED':
-      case 'CANCELED':
-        return const Color(0xFFF87171);
-      default:
-        return const Color(0xFFA78BFA);
-    }
-  }
+  static Color statusColor(String status) => palette.status(status);
 
   static String two(int v) => v.toString().padLeft(2, '0');
 
@@ -107,4 +91,115 @@ class BoardTheme {
       return null;
     }
   }
+}
+
+/// One set of board colours.
+class BoardPalette {
+  const BoardPalette({
+    required this.background,
+    required this.backgroundEnd,
+    required this.panel,
+    required this.panelHigh,
+    required this.rowEven,
+    required this.rowOdd,
+    required this.border,
+    required this.accent,
+    required this.soon,
+    required this.textPrimary,
+    required this.textSecondary,
+    required this.textMuted,
+    required this.gridLine,
+    required this.headerFill,
+    required this.offVessel,
+    required this.selection,
+    required this.success,
+    required this.danger,
+    required this.warning,
+    required this.info,
+    required this.violet,
+    required this.isLight,
+  });
+
+  final Color background, backgroundEnd, panel, panelHigh, rowEven, rowOdd, border, accent, soon;
+  final Color textPrimary, textSecondary, textMuted, gridLine, headerFill, offVessel, selection;
+  final Color success, danger, warning, info, violet;
+  final bool isLight;
+
+  /// Status colour: blue assigned, orange on the road, green done, amber waiting, red cancelled.
+  Color status(String status) {
+    switch (status.trim().toUpperCase()) {
+      case 'ASSIGNED':
+        return accent;
+      case 'IN TRANSIT':
+      case 'STARTED':
+      case 'ONGOING':
+        return info;
+      case 'COMPLETED':
+      case 'DELIVERED':
+      case 'CLOSED':
+        return success;
+      case 'PENDING':
+      case 'OPEN':
+        return warning;
+      case 'CANCELLED':
+      case 'CANCELED':
+        return danger;
+      default:
+        return violet;
+    }
+  }
+
+  /// Royal blue on a dark navy base: white text stands out and the TV shows less glare.
+  /// Alternate rows differ clearly so the eye can follow one job across the grid.
+  static const navy = BoardPalette(
+    background: Color(0xFF020B24),
+    backgroundEnd: Color(0xFF07194A),
+    panel: Color(0xFF0A1F52),
+    panelHigh: Color(0xFF1746B0),
+    rowEven: Color(0xFF0E2A66),
+    rowOdd: Color(0xFF061536),
+    border: Color(0xFF2456C2),
+    accent: Color(0xFF5AB0FF),
+    soon: Color(0xFFFBBF24),
+    textPrimary: Colors.white,
+    textSecondary: Color(0xFFC6D7F7),
+    textMuted: Color(0xFF8AA3D6),
+    gridLine: Color(0xFF1F4BA8),
+    headerFill: Color(0xFF123A8F),
+    offVessel: Color(0xFFC4B5FD),
+    selection: Color(0xFF22D3EE),
+    success: Color(0xFF4ADE80),
+    danger: Color(0xFFF87171),
+    warning: Color(0xFFFACC15),
+    info: Color(0xFFFB923C),
+    violet: Color(0xFFA78BFA),
+    isLight: false,
+  );
+
+  /// maleva_app's Planning screens (core/theme/app_theme.dart, light): #F3F5FA page, white cards,
+  /// #F6F8FC second surface, #DDE3EE outlines, blue #1555F3, ink #121826, and its status tones.
+  static const malevaLight = BoardPalette(
+    background: Color(0xFFF3F5FA),
+    backgroundEnd: Color(0xFFE9EEF8),
+    panel: Color(0xFFFFFFFF),
+    panelHigh: Color(0xFFFFFFFF),
+    rowEven: Color(0xFFFFFFFF),
+    rowOdd: Color(0xFFF6F8FC),
+    border: Color(0xFFDDE3EE),
+    accent: Color(0xFF1555F3),
+    soon: Color(0xFFB45309),
+    textPrimary: Color(0xFF121826),
+    textSecondary: Color(0xFF535D74),
+    textMuted: Color(0xFF7C86A2),
+    gridLine: Color(0xFFDDE3EE),
+    headerFill: Color(0xFFF6F8FC),
+    offVessel: Color(0xFF5B2EB0),
+    selection: Color(0xFF1555F3),
+    success: Color(0xFF0B6B45),
+    danger: Color(0xFFB42318),
+    warning: Color(0xFF8A4B00),
+    info: Color(0xFF075985),
+    violet: Color(0xFF5B2EB0),
+    isLight: true,
+  );
 }

@@ -84,7 +84,7 @@ class BoardCells {
   static Widget time(String? value, DateTime now) {
     final at = BoardTheme.parseDateTime(value);
     if (at == null) {
-      return const Center(child: Text('—', style: TextStyle(fontSize: 18, color: BoardTheme.textMuted)));
+      return Center(child: Text('—', style: TextStyle(fontSize: 18, color: BoardTheme.textMuted)));
     }
     final passed = at.isBefore(now);
     final soon = !passed && at.difference(now) <= const Duration(hours: 2);

@@ -32,6 +32,7 @@ class PlanningBoardView extends StatelessWidget {
     this.search = '',
     this.searchBar,
     this.titleWidget,
+    this.belowTitle,
     super.key,
   });
 
@@ -45,6 +46,7 @@ class PlanningBoardView extends StatelessWidget {
   final String search;
   final Widget? searchBar;
   final Widget? titleWidget;
+  final Widget? belowTitle;
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +63,7 @@ class PlanningBoardView extends StatelessWidget {
       search: search,
       searchBar: searchBar,
       titleWidget: titleWidget,
+      belowTitle: belowTitle,
       noMatchTitle: 'No planned job matches',
       columnHeaders: const PlanningColumnHeaders(),
       rowBuilder: (job, index, selected, now) =>
@@ -122,8 +125,8 @@ class PlanningRow extends StatelessWidget {
             : (index.isEven ? BoardTheme.rowEven : BoardTheme.rowOdd),
         border: Border(
           // a brighter line where a new truck's jobs start
-          top: job.firstOfTruck && index > 0 ? const BorderSide(color: BoardTheme.accent, width: 2) : BorderSide.none,
-          bottom: const BorderSide(color: BoardTheme.gridLine),
+          top: job.firstOfTruck && index > 0 ? BorderSide(color: BoardTheme.accent, width: 2) : BorderSide.none,
+          bottom: BorderSide(color: BoardTheme.gridLine),
         ),
       ),
       child: Row(
@@ -137,7 +140,7 @@ class PlanningRow extends StatelessWidget {
                 Expanded(
                   child: Center(
                     child: Text('${index + 1}',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: BoardTheme.textMuted)),
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: BoardTheme.textMuted)),
                   ),
                 ),
               ],
@@ -190,7 +193,7 @@ class PlanningRow extends StatelessWidget {
           const SizedBox(height: 3),
           Row(
             children: [
-              const Icon(Icons.person_rounded, size: 15, color: BoardTheme.textSecondary),
+              Icon(Icons.person_rounded, size: 15, color: BoardTheme.textSecondary),
               const SizedBox(width: 8),
               Flexible(
                 child: Text.rich(
@@ -230,7 +233,7 @@ class PlanningRow extends StatelessWidget {
             child: Text.rich(
               _marked(
                 job.jobNo.isEmpty ? '—' : job.jobNo,
-                const TextStyle(
+                TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
                   color: BoardTheme.textPrimary,
@@ -247,7 +250,7 @@ class PlanningRow extends StatelessWidget {
 
   Widget _textCell(String text, {double size = 15, FontWeight weight = FontWeight.w600}) {
     if (text.isEmpty) {
-      return const Center(child: Text('—', style: TextStyle(fontSize: 18, color: BoardTheme.textMuted)));
+      return Center(child: Text('—', style: TextStyle(fontSize: 18, color: BoardTheme.textMuted)));
     }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 14),
