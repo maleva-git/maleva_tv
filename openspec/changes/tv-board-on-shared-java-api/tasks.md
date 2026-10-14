@@ -47,3 +47,4 @@
 - [x] 6.17 Ship icon removed from the vessel column; the name starts under the VESSEL heading (16 px) and has the freed width.
 - [x] 6.18 Desktop (Mac and Windows): macOS `network.client` entitlement; window titled "Maleva Vessel Board", opening full-screen (Mac) / maximised (Windows); Escape acts as Back; the sign-in is kept in the classic macOS keychain (`usesDataProtectionKeychain: false`; the data-protection keychain refused an unsigned app with -34018, checked on this Mac) and in Windows' credential store. Build steps in `RELEASE_BUILD.md`.
 - [ ] 6.19 Owner: build on a Windows PC (`flutter build windows --release`) and sign in once.
+- [x] 6.20 Desktop icons: the round Maleva emblem (`assets/company/logo1.png`) on a white rounded tile replaces the Flutter icon - Windows `app_icon.ico` (16-256 px) and the macOS AppIcon set (16-1024 px, Apple margin). Windows program named "Maleva Vessel Board" by Maleva, exe `MalevaVesselBoard.exe`.

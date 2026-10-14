@@ -75,6 +75,6 @@ Then, in the `maleva_tv` folder:
 flutter build windows --release
 ```
 
-The app is the whole folder `build\windows\x64\runner\Release\` (`maleva_tv.exe` plus its `.dll` files and
+The app is the whole folder `build\windows\x64\runner\Release\` (`MalevaVesselBoard.exe` plus its `.dll` files and
 the `data` folder). Copy or zip that **whole folder**; the `.exe` alone does not start. Windows may show
 "Windows protected your PC" the first time: **More info** → **Run anyway**.
