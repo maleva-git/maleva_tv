@@ -1,0 +1,14 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      // http://localhost:5173 is the browser address the Java server allows (CORS)
+      "name": "Board in Chrome (localhost 5173)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "deviceId": "chrome",
+      "args": ["--web-port", "5173", "--web-hostname", "localhost"]
+    }
+  ]
+}

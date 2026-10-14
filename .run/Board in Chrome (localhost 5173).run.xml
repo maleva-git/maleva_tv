@@ -1,0 +1,8 @@
+<component name="ProjectRunConfigurationManager">
+  <!-- Runs the board in Chrome at http://localhost:5173 - the browser address the Java server allows (CORS). -->
+  <configuration default="false" name="Board in Chrome (localhost 5173)" type="FlutterRunConfigurationType" factoryName="Flutter">
+    <option name="additionalArgs" value="-d chrome --web-port 5173 --web-hostname localhost" />
+    <option name="filePath" value="$PROJECT_DIR$/lib/main.dart" />
+    <method v="2" />
+  </configuration>
+</component>

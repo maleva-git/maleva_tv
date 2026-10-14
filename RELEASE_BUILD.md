@@ -78,3 +78,17 @@ flutter build windows --release
 The app is the whole folder `build\windows\x64\runner\Release\` (`MalevaVesselBoard.exe` plus its `.dll` files and
 the `data` folder). Copy or zip that **whole folder**; the `.exe` alone does not start. Windows may show
 "Windows protected your PC" the first time: **More info** → **Run anyway**.
+
+## Browser: Chrome at http://localhost:5173
+
+The Java server accepts browser calls only from listed addresses (CORS); `http://localhost:5173` is
+one of them, so the board runs in Chrome on that port:
+
+```bash
+flutter run -d chrome --web-port 5173 --web-hostname localhost
+```
+
+Or pick **"Board in Chrome (localhost 5173)"** in Android Studio's run menu (`.run/`) or VS Code's
+Run and Debug (`.vscode/launch.json`). Port 5173 is also React's (`maleva-front-end`) dev port:
+stop the React dev server first, or the board cannot start. Another port loads the page, but every
+API call is refused by the browser.
