@@ -344,8 +344,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   Widget build(BuildContext context) {
     final search = ref.watch(searchProvider);
     final board = ref.watch(boardProvider);
-    // Each board's own colours: Planning follows maleva_app's Planning screens, Vessel Planning stays navy.
-    BoardTheme.palette = board == BoardKind.planning ? BoardPalette.malevaLight : BoardPalette.navy;
+    // Both boards use Vessel Planning's navy colours (the owner's choice, 2026-10-14).
+    BoardTheme.palette = BoardPalette.navy;
     final controls = Row(children: [
       _modePill(),
       if (board == BoardKind.planning) ...[const SizedBox(width: 10), _livePill()],
