@@ -383,7 +383,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                     date: ref.watch(dateProvider),
                     onChangeDate: _changeDate,
                     jobs: ref.watch(planningJobsProvider),
-                    autoPlay: _auto,
+                    // Planning stands still (the owner's choice, 2026-10-14); ▲▼ and the page keys move it.
+                    autoPlay: false,
                     selectedIndex: _selected,
                     controls: controls,
                     search: search,
@@ -773,9 +774,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final IconData icon;
     final String text;
     if (_auto) {
+      final still = ref.watch(boardProvider) == BoardKind.planning;
       color = BoardTheme.success;
-      icon = Icons.play_circle_rounded;
-      text = 'AUTO · SCROLLING';
+      icon = still ? Icons.pan_tool_alt_rounded : Icons.play_circle_rounded;
+      text = still ? 'AUTO · SCROLL OFF' : 'AUTO · SCROLLING';
     } else {
       final idle = _searching ? _searchIdle : _idleResume;
       final left = idle - DateTime.now().difference(_lastKey);

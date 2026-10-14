@@ -72,3 +72,4 @@
 - [x] 7.16 REMARKS column removed from the Planning grid (owner's request 2026-10-14); its room goes to the other cells. Clearer text and more space: rows 74 px, text 17 px (was 15), driver 19, truck 24, job no 17, S.NO 18, cell padding 14-16 px.
 - [x] 7.17 Driver column shows the name only (initials badge removed); truck column shows a truck icon before the truck name (lighter for the same truck's next job). Owner's request 2026-10-14.
 - [x] 7.18 Planning uses Vessel Planning's navy colours (owner's request 2026-10-14): one look for both boards. `BoardPalette.malevaLight` stays in the code, unused by the boards.
+- [x] 7.19 Planning auto-scroll off (owner's request 2026-10-14): the board stands still, ▲▼ / CH± / page keys move it; footer shows "AUTO · SCROLL OFF". Vessel Planning keeps scrolling. Verify: `test/features/planning/planning_test.dart`.

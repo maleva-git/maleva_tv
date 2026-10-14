@@ -151,11 +151,15 @@ void main() {
     expect(find.text('WXY 1234'), findsOneWidget);
     expect(c.read(boardProvider), BoardKind.planning);
     expect(find.text('ALL PORTS'), findsNothing); // no port filter on Planning
+    // Planning stands still; Vessel Planning scrolls
+    expect(tester.widget<PlanningBoardView>(find.byType(PlanningBoardView)).autoPlay, isFalse);
+    expect(find.text('AUTO · SCROLL OFF'), findsOneWidget);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.tab);
     await settle();
     expect(find.byType(JobBoardView), findsOneWidget);
     expect(find.text('ALL PORTS'), findsOneWidget); // back on Vessel Planning, with its port filter
+    expect(tester.widget<JobBoardView>(find.byType(JobBoardView)).autoPlay, isTrue);
     await tester.pumpWidget(const SizedBox());
   });
 }
