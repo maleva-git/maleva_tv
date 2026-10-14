@@ -470,10 +470,15 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             ],
           ),
           const SizedBox(height: 3),
-          Text(subtitle.toUpperCase(),
-              maxLines: 1,
-              style: TextStyle(
-                  fontSize: 10, fontWeight: FontWeight.w600, color: BoardTheme.textSecondary, letterSpacing: 1.2)),
+          // A plan's remarks can be very long: the line stops under the tabs and ends with "…".
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: Text(subtitle.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                    fontSize: 10, fontWeight: FontWeight.w600, color: BoardTheme.textSecondary, letterSpacing: 1.2)),
+          ),
         ],
       ),
     );

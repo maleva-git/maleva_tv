@@ -18,6 +18,12 @@ class PlanningJob {
     this.offPort,
     this.sortBy = 0,
     this.planId = 0,
+    this.pkg = '',
+    this.pic = '',
+    this.leta,
+    this.oeta,
+    this.remarks = '',
+    this.truckSize = '',
     this.firstOfTruck = true,
   });
 
@@ -54,6 +60,16 @@ class PlanningJob {
   /// The plan the job belongs to (`PLANINGMasterRefId`), for "all plans of the day".
   final int planId;
 
+  /// Quantity / weight (`pkg`), the person in charge (`EmployeeName`), loading and off-vessel ETA
+  /// (`LETA`, `OETA`), the row's remarks (`Remarks`) and the truck size (`truckSize`) - the columns of
+  /// maleva_app's tablet planning grid.
+  final String pkg;
+  final String pic;
+  final String? leta;
+  final String? oeta;
+  final String remarks;
+  final String truckSize;
+
   /// The first row of its truck's group on the board (the truck name is shown in full there).
   final bool firstOfTruck;
 
@@ -74,6 +90,12 @@ class PlanningJob {
         offPort: offPort,
         sortBy: sortBy,
         planId: planId,
+        pkg: pkg,
+        pic: pic,
+        leta: leta,
+        oeta: oeta,
+        remarks: remarks,
+        truckSize: truckSize,
         firstOfTruck: first,
       );
 
@@ -97,6 +119,13 @@ class PlanningJob {
       offPort: text('OPort'),
       sortBy: int.tryParse('${json['SortBy']}') ?? 0,
       planId: int.tryParse('${json['PLANINGMasterRefId'] ?? ''}') ?? 0,
+      // "/" alone means both quantity and weight are empty
+      pkg: text('pkg') == '/' ? '' : text('pkg'),
+      pic: text('EmployeeName'),
+      leta: text('LETA'),
+      oeta: text('OETA'),
+      remarks: text('Remarks'),
+      truckSize: text('truckSize'),
     );
   }
 }

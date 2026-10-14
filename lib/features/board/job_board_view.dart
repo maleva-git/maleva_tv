@@ -32,6 +32,7 @@ class BoardView<T> extends StatefulWidget {
     this.noMatchTitle = 'Nothing matches',
     this.belowTitle,
     this.edgePause = const Duration(seconds: 4),
+    this.rowHeight = 68,
     super.key,
   });
 
@@ -74,6 +75,9 @@ class BoardView<T> extends StatefulWidget {
   /// How long auto-scroll holds at the top and at the bottom of the list.
   final Duration edgePause;
 
+  /// The height of one row (its grid line included); the rows must draw at this height.
+  final double rowHeight;
+
   @override
   State<BoardView<T>> createState() => _BoardViewState<T>();
 }
@@ -89,7 +93,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
   Duration get _edgePause => widget.edgePause;
 
   /// One row of [JobBoardItem], grid line included.
-  static const _rowHeight = 68.0;
+  double get _rowHeight => widget.rowHeight;
 
   /// The narrowest width the board is laid out at; smaller screens scale it down.
   static const _designWidth = 1440.0;
