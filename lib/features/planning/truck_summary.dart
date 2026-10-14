@@ -25,6 +25,7 @@ class TruckSummaryBar extends ConsumerWidget {
         color: BoardTheme.panel,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: BoardTheme.border),
+        boxShadow: BoardTheme.raised,
       ),
       child: allocation.when(
         skipLoadingOnReload: true,

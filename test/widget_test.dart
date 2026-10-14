@@ -25,7 +25,7 @@ void main() {
         httpClientProvider.overrideWithValue(server),
         tvAuthServiceProvider.overrideWithValue(TvAuthService(server, baseUrl: base)),
       ],
-      child: const TVApp(),
+      child: const TVApp(interFont: false),
     ));
     await tester.pump();
     await tester.pump();

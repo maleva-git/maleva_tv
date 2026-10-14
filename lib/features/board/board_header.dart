@@ -40,7 +40,7 @@ class BoardHeaderRow extends StatelessWidget {
                     style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
-                        color: BoardTheme.textSecondary,
+                        color: BoardTheme.headerSubText,
                         letterSpacing: 1.4)),
               ],
             ),

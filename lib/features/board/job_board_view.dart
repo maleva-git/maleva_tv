@@ -220,6 +220,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
         ),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: BoardTheme.border),
+        boxShadow: BoardTheme.raised,
       ),
       child: Row(
         children: [
@@ -360,6 +361,7 @@ class _BoardViewState<T> extends State<BoardView<T>> {
         color: BoardTheme.rowOdd,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: BoardTheme.gridLine, width: 1.5),
+        boxShadow: BoardTheme.raised,
       ),
       child: Column(
         children: [

@@ -2,7 +2,7 @@ name: maleva_tv
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.8.1+38
+version: 1.9.0+39
 
 environment:
   sdk: '>=3.5.0 <4.0.0'
@@ -13,7 +13,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_riverpod: ^2.5.1
   http: ^1.2.1
-  google_fonts: ^6.2.1
+  google_fonts: ^8.0.2
   fluttertoast: ^8.2.4
   intl: ^0.19.0
   url_launcher: ^6.3.0

@@ -39,6 +39,17 @@ class BoardTheme {
   static Color get gridLine => palette.gridLine;
   static Color get headerFill => palette.headerFill;
   static Color get offVessel => palette.offVessel;
+  static Color get headerText => palette.headerText;
+  static Color get headerSubText => palette.headerSubText;
+
+  /// Soft shadows that lift the title bar, truck bar and grid off the page.
+  static List<BoxShadow> get raised => palette.isLight
+      ? [
+          BoxShadow(
+              color: const Color(0xFF1B2B5A).withValues(alpha: 0.10), blurRadius: 24, offset: const Offset(0, 10)),
+          BoxShadow(color: const Color(0xFF1B2B5A).withValues(alpha: 0.06), blurRadius: 4, offset: const Offset(0, 1)),
+        ]
+      : [BoxShadow(color: Colors.black.withValues(alpha: 0.40), blurRadius: 24, offset: const Offset(0, 10))];
 
   /// The row or control picked with the remote: bright, so it is seen from across the room.
   static Color get selection => palette.selection;
@@ -118,12 +129,17 @@ class BoardPalette {
     required this.info,
     required this.violet,
     required this.isLight,
+    required this.headerText,
+    required this.headerSubText,
   });
 
   final Color background, backgroundEnd, panel, panelHigh, rowEven, rowOdd, border, accent, soon;
   final Color textPrimary, textSecondary, textMuted, gridLine, headerFill, offVessel, selection;
   final Color success, danger, warning, info, violet;
   final bool isLight;
+
+  /// Column headings on [headerFill].
+  final Color headerText, headerSubText;
 
   /// Status colour: blue assigned, orange on the road, green done, amber waiting, red cancelled.
   Color status(String status) {
@@ -174,6 +190,8 @@ class BoardPalette {
     info: Color(0xFFFB923C),
     violet: Color(0xFFA78BFA),
     isLight: false,
+    headerText: Colors.white,
+    headerSubText: Color(0xFFC6D7F7),
   );
 
   /// maleva_app's Planning screens (core/theme/app_theme.dart, light): #F3F5FA page, white cards,
@@ -192,7 +210,7 @@ class BoardPalette {
     textSecondary: Color(0xFF535D74),
     textMuted: Color(0xFF7C86A2),
     gridLine: Color(0xFFDDE3EE),
-    headerFill: Color(0xFFF6F8FC),
+    headerFill: Color(0xFF1A4FD6),
     offVessel: Color(0xFF5B2EB0),
     selection: Color(0xFF1555F3),
     success: Color(0xFF0B6B45),
@@ -201,5 +219,7 @@ class BoardPalette {
     info: Color(0xFF075985),
     violet: Color(0xFF5B2EB0),
     isLight: true,
+    headerText: Colors.white,
+    headerSubText: Color(0xFFD6E2FF),
   );
 }

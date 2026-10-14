@@ -219,7 +219,7 @@ class PlanningRow extends StatelessWidget {
       );
     }
     final repeat = !job.firstOfTruck;
-    final ink = repeat ? BoardTheme.textSecondary : BoardTheme.textPrimary;
+    final ink = repeat ? BoardTheme.textSecondary : Colors.white;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Column(
@@ -231,17 +231,32 @@ class PlanningRow extends StatelessWidget {
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                decoration: BoxDecoration(
-                  color: repeat ? Colors.transparent : BoardTheme.accent.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: repeat ? BoardTheme.border : BoardTheme.accent, width: 2),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: repeat
+                    ? BoxDecoration(
+                        borderRadius: BorderRadius.circular(9),
+                        border: Border.all(color: BoardTheme.border, width: 2),
+                      )
+                    : BoxDecoration(
+                        // a raised plate: light from the top, a soft shadow under it
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Color.lerp(BoardTheme.accent, Colors.white, 0.18)!, BoardTheme.accent],
+                        ),
+                        borderRadius: BorderRadius.circular(9),
+                        border: Border.all(color: Color.lerp(BoardTheme.accent, Colors.black, 0.25)!, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                              color: BoardTheme.accent.withValues(alpha: 0.35),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3)),
+                        ],
+                      ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.local_shipping_rounded,
-                        size: 20, color: repeat ? BoardTheme.textMuted : BoardTheme.accent),
+                    Icon(Icons.local_shipping_rounded, size: 20, color: repeat ? BoardTheme.textMuted : Colors.white),
                     const SizedBox(width: 8),
                     Text.rich(
                       _marked(
@@ -307,11 +322,13 @@ class PlanningRow extends StatelessWidget {
     );
   }
 
-  /// A plain cell: up to two lines, cut with "…".
-  Widget _text(String value, {FontWeight weight = FontWeight.w500, bool upper = true}) {
+  /// A plain cell: up to two lines, cut with "…". A single word ("SINGAPORE") never breaks in the
+  /// middle: it stays on one line and shrinks a little if it must.
+  Widget _text(String value, {FontWeight weight = FontWeight.w600, bool upper = true}) {
     final missing = value.trim().isEmpty;
+    final oneWord = !missing && !value.trim().contains(RegExp(r'\s'));
     final style = TextStyle(
-      fontSize: 14,
+      fontSize: 15,
       fontWeight: missing ? FontWeight.w600 : weight,
       color: missing ? BoardTheme.textMuted : BoardTheme.textPrimary,
       height: 1.15,
@@ -320,11 +337,17 @@ class PlanningRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: Align(
         alignment: Alignment.centerLeft,
-        child: Text.rich(
-          _marked(missing ? '—' : (upper ? value.toUpperCase() : value), style),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-        ),
+        child: oneWord
+            ? FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text.rich(_marked(upper ? value.trim().toUpperCase() : value.trim(), style), maxLines: 1),
+              )
+            : Text.rich(
+                _marked(missing ? '—' : (upper ? value.toUpperCase() : value), style),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
       ),
     );
   }

@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:maleva_tv/core/session/tv_auth_controller.dart';
 import 'package:maleva_tv/features/auth/sign_in_screen.dart';
 import 'package:maleva_tv/features/board/board_theme.dart';
 import 'main_navigation_screen.dart';
 
 class TVApp extends StatelessWidget {
-  const TVApp({super.key});
+  const TVApp({this.interFont = true, super.key});
+
+  /// maleva_app's font (Inter, from Google Fonts, kept on the device after the first start). Tests
+  /// switch it off: they have no network.
+  final bool interFont;
 
   @override
   Widget build(BuildContext context) {
@@ -15,6 +20,7 @@ class TVApp extends StatelessWidget {
       title: 'Maleva TV',
       theme: ThemeData(
         brightness: Brightness.dark,
+        fontFamily: interFont ? GoogleFonts.inter().fontFamily : null,
         scaffoldBackgroundColor: BoardTheme.background,
         colorScheme: ColorScheme.fromSeed(seedColor: BoardTheme.accent, brightness: Brightness.dark),
       ),
