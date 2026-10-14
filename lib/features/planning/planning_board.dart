@@ -7,8 +7,8 @@ import 'package:maleva_tv/features/board/job_board_view.dart';
 import 'planning_job.dart';
 
 /// Planning column widths (flex), after the fixed S.NO column. maleva_app's tablet planning grid,
-/// without its edit-only columns and, as the owner asked, without L ETA, O ETA and STATUS; the room
-/// goes to TRUCK and DRIVER, shown large.
+/// without its edit-only columns and, as the owner asked, without L ETA, O ETA, STATUS and REMARKS;
+/// the room goes to TRUCK and DRIVER, shown large, and to roomier text cells.
 class PlanningColumns {
   PlanningColumns._();
 
@@ -22,11 +22,10 @@ class PlanningColumns {
   static const date = 2; // P.DATE, D.DATE
   static const vessel = 3;
   static const pic = 3;
-  static const remarks = 3;
 }
 
 /// One row of the Planning grid.
-const planningRowHeight = 66.0;
+const planningRowHeight = 74.0;
 
 /// The Planning board: [BoardView] with the plan(s), one row per job in the web's order, laid out like
 /// maleva_app's tablet planning grid.
@@ -86,8 +85,7 @@ class PlanningBoardView extends StatelessWidget {
   }
 }
 
-/// S.NO / JOB NO / TRUCK / DRIVER / ORIGIN / DEST / PKG / WT / CUSTOMER / P.DATE / D.DATE / VESSEL / PIC /
-/// REMARKS.
+/// S.NO / JOB NO / TRUCK / DRIVER / ORIGIN / DEST / PKG / WT / CUSTOMER / P.DATE / D.DATE / VESSEL / PIC.
 class PlanningColumnHeaders extends StatelessWidget {
   const PlanningColumnHeaders({super.key});
 
@@ -108,8 +106,7 @@ class PlanningColumnHeaders extends StatelessWidget {
       cell(flex: PlanningColumns.date, child: BoardHeaderRow.twoLine('P.DATE', 'PICKUP')),
       cell(flex: PlanningColumns.date, child: BoardHeaderRow.twoLine('D.DATE', 'DELIVERY')),
       cell(flex: PlanningColumns.vessel, child: left('VESSEL')),
-      cell(flex: PlanningColumns.pic, child: left('PIC')),
-      cell(flex: PlanningColumns.remarks, child: left('REMARKS'), divider: false),
+      cell(flex: PlanningColumns.pic, child: left('PIC'), divider: false),
     ]);
   }
 }
@@ -153,7 +150,7 @@ class PlanningRow extends StatelessWidget {
             width: BoardTheme.snoWidth,
             child: Center(
               child: Text('${index + 1}',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: BoardTheme.textMuted)),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: BoardTheme.textMuted)),
             ),
           ),
           cell(flex: PlanningColumns.jobNo, child: _jobNo()),
@@ -166,8 +163,7 @@ class PlanningRow extends StatelessWidget {
           cell(flex: PlanningColumns.date, child: BoardCells.time(job.pickup, now)),
           cell(flex: PlanningColumns.date, child: BoardCells.time(job.delivery, now)),
           cell(flex: PlanningColumns.vessel, child: _text(job.vessel, weight: FontWeight.w700)),
-          cell(flex: PlanningColumns.pic, child: _text(job.pic)),
-          cell(flex: PlanningColumns.remarks, child: _text(job.remarks, upper: false), divider: false),
+          cell(flex: PlanningColumns.pic, child: _text(job.pic), divider: false),
         ],
       ),
     );
@@ -176,7 +172,7 @@ class PlanningRow extends StatelessWidget {
   TextSpan _marked(String text, TextStyle style) => BoardCells.marked(text, style, highlight);
 
   Widget _jobNo() => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Align(
           alignment: Alignment.centerLeft,
           child: FittedBox(
@@ -185,7 +181,7 @@ class PlanningRow extends StatelessWidget {
               _marked(
                 job.jobNo.isEmpty ? '—' : job.jobNo,
                 TextStyle(
-                  fontSize: 15,
+                  fontSize: 17,
                   fontWeight: FontWeight.w800,
                   color: BoardTheme.accent,
                   fontFeatures: const [FontFeature.tabularFigures()],
@@ -204,11 +200,11 @@ class PlanningRow extends StatelessWidget {
     final repeat = !job.firstOfTruck;
     return Container(
       color: BoardTheme.accent.withValues(alpha: BoardTheme.palette.isLight ? 0.08 : 0.16),
-      padding: const EdgeInsets.symmetric(horizontal: 14),
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       alignment: Alignment.centerLeft,
       child: none
           ? Text('NO TRUCK YET',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900, color: BoardTheme.warning, letterSpacing: 1))
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: BoardTheme.warning, letterSpacing: 1))
           : FittedBox(
               fit: BoxFit.scaleDown,
               alignment: Alignment.centerLeft,
@@ -216,7 +212,7 @@ class PlanningRow extends StatelessWidget {
                 _marked(
                   job.truck.toUpperCase(),
                   TextStyle(
-                    fontSize: 22,
+                    fontSize: 24,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1,
                     color: repeat ? BoardTheme.textMuted : BoardTheme.accent,
@@ -233,30 +229,30 @@ class PlanningRow extends StatelessWidget {
     final name = job.driver.trim();
     if (name.isEmpty) {
       return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Align(
           alignment: Alignment.centerLeft,
           child: Text('NO DRIVER YET',
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: BoardTheme.warning, letterSpacing: 1)),
+              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: BoardTheme.warning, letterSpacing: 1)),
         ),
       );
     }
     final initials =
         name.split(RegExp(r'\s+')).where((p) => p.isNotEmpty).take(2).map((p) => p[0]).join().toUpperCase();
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Row(children: [
         CircleAvatar(
-          radius: 17,
+          radius: 19,
           backgroundColor: BoardTheme.accent.withValues(alpha: 0.12),
-          child: Text(initials, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: BoardTheme.accent)),
+          child: Text(initials, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: BoardTheme.accent)),
         ),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         Expanded(
           child: Text.rich(
             _marked(
               name.toUpperCase(),
-              TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary, height: 1.1),
+              TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary, height: 1.15),
             ),
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -272,13 +268,14 @@ class PlanningRow extends StatelessWidget {
     final missing = value.trim().isEmpty;
     final oneWord = !missing && !value.trim().contains(RegExp(r'\s'));
     final style = TextStyle(
-      fontSize: 15,
+      fontSize: 17,
       fontWeight: missing ? FontWeight.w600 : weight,
       color: missing ? BoardTheme.textMuted : BoardTheme.textPrimary,
-      height: 1.15,
+      height: 1.2,
+      letterSpacing: 0.2,
     );
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       child: Align(
         alignment: Alignment.centerLeft,
         child: oneWord
