@@ -22,25 +22,31 @@ class JavaApiClient {
   final String _baseUrl;
 
   /// POSTs [body] as JSON and returns the answer's `Data1`.
-  Future<dynamic> post(String path, {Map<String, String>? query, Object? body}) async {
+  Future<dynamic> post(String path, {Map<String, String>? query, Object? body}) =>
+      _withSession((token) => _send(path, token, query, body));
+
+  /// GETs [path] and returns the answer's data.
+  Future<dynamic> get(String path, {Map<String, String>? query}) =>
+      _withSession((token) => _send(path, token, query, null, get: true));
+
+  Future<dynamic> _withSession(Future<dynamic> Function(String token) call) async {
     final session = _auth.session ?? await _auth.renew();
     try {
-      return await _send(path, session.token, query, body);
+      return await call(session.token);
     } on ApiException catch (e) {
       if (e.statusCode != 401) rethrow;
       final renewed = await _auth.renew();
-      return _send(path, renewed.token, query, body);
+      return call(renewed.token);
     }
   }
 
-  Future<dynamic> _send(String path, String token, Map<String, String>? query, Object? body) async {
+  Future<dynamic> _send(String path, String token, Map<String, String>? query, Object? body, {bool get = false}) async {
     final uri = Uri.parse('$_baseUrl$path').replace(queryParameters: query);
+    final headers = {'Content-Type': 'application/json; charset=UTF-8', 'Authorization': 'Bearer $token'};
     try {
-      final response = await _http
-          .post(uri,
-              headers: {'Content-Type': 'application/json; charset=UTF-8', 'Authorization': 'Bearer $token'},
-              body: jsonEncode(body))
-          .timeout(_timeout);
+      final response =
+          await (get ? _http.get(uri, headers: headers) : _http.post(uri, headers: headers, body: jsonEncode(body)))
+              .timeout(_timeout);
       if (kDebugMode) _logAnswer(path, body, response);
       return JavaAnswer.data(response);
     } on SocketException {
@@ -57,7 +63,7 @@ class JavaApiClient {
   /// The token is never printed.
   static void _logAnswer(String path, Object? body, http.Response response) {
     const encoder = JsonEncoder.withIndent('  ');
-    debugPrint('┌─ API POST $path  →  ${response.statusCode}');
+    debugPrint('┌─ API ${body == null ? 'GET' : 'POST'} $path  →  ${response.statusCode}');
     debugPrint('│ request: ${jsonEncode(body)}');
     try {
       final decoded = jsonDecode(response.body);

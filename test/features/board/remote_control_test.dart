@@ -91,8 +91,7 @@ void main() {
     await close(tester);
   });
 
-  testWidgets('up on the first row goes straight to the last row, down on the last back to the first',
-      (tester) async {
+  testWidgets('up on the first row goes straight to the last row, down on the last back to the first', (tester) async {
     await open(tester);
     await press(tester, LogicalKeyboardKey.arrowDown); // row 1
     await press(tester, LogicalKeyboardKey.arrowUp);

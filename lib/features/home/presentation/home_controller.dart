@@ -1,4 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:maleva_tv/core/session/tv_auth_service.dart';
 import 'package:maleva_tv/features/home/domain/entities/job_model.dart';
 import 'package:maleva_tv/core/providers.dart';
 
@@ -18,6 +20,34 @@ final dateProvider = StateNotifierProvider<DateController, DateTime>((ref) {
   return DateController();
 });
 
+/// The port the board is limited to ('' = all ports). Kept on the device, so a TV set to one
+/// port stays on it after a restart.
+class PortFilterController extends StateNotifier<String> {
+  PortFilterController(this._storage) : super('') {
+    _storage.read(key: _key).then((saved) {
+      if (mounted && saved != null && saved.isNotEmpty) state = saved;
+    }).catchError((_) {});
+  }
+
+  static const _key = 'tv.port';
+  final FlutterSecureStorage _storage;
+
+  void select(String port) {
+    state = port;
+    (port.isEmpty ? _storage.delete(key: _key) : _storage.write(key: _key, value: port)).catchError((_) {});
+  }
+}
+
+final portStorageProvider = Provider<FlutterSecureStorage>((ref) => TvAuthService.defaultStorage);
+
+final portFilterProvider =
+    StateNotifierProvider<PortFilterController, String>((ref) => PortFilterController(ref.watch(portStorageProvider)));
+
+/// The company's ports for the port picker.
+final portsProvider = FutureProvider<List<String>>((ref) {
+  return ref.watch(portApiProvider).activePorts(ref.watch(companyIdProvider));
+});
+
 /// The vessel search typed on the TV; empty shows the selected day's board.
 final searchProvider = StateProvider<String>((ref) => '');
 
@@ -29,14 +59,16 @@ final jobsProvider = FutureProvider<List<JobModel>>((ref) async {
   final selectedDate = ref.watch(dateProvider);
   final companyId = ref.watch(companyIdProvider);
   final query = ref.watch(searchProvider).trim();
+  final port = ref.watch(portFilterProvider);
   final api = ref.watch(vesselPlanningApiProvider);
   if (query.isEmpty) {
-    return api.boardJobs(companyId: companyId, date: selectedDate);
+    return api.boardJobs(companyId: companyId, date: selectedDate, port: port);
   }
   final jobs = await api.jobsBetween(
     companyId: companyId,
     from: selectedDate.subtract(const Duration(days: searchDaysBack)),
     to: selectedDate.add(const Duration(days: searchDaysAhead)),
+    port: port,
   );
   return jobs.where((job) => matchesSearch(job, query)).toList();
 });

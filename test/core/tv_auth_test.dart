@@ -8,11 +8,21 @@ import 'package:maleva_tv/core/network/java_api_client.dart';
 import 'package:maleva_tv/core/session/tv_auth_service.dart';
 
 http.Response _session(String token) => http.Response(
-    jsonEncode({'IsSuccess': true, 'StatusCode': 200, 'Data1': {'token': token, 'companyId': 6, 'companyName': 'Maleva', 'principalKind': 'EMPLOYEE'}}),
+    jsonEncode({
+      'IsSuccess': true,
+      'StatusCode': 200,
+      'Data1': {'token': token, 'companyId': 6, 'companyName': 'Maleva', 'principalKind': 'EMPLOYEE'}
+    }),
     200);
-http.Response _refused() => http.Response(jsonEncode({'IsSuccess': false, 'StatusCode': 401, 'Message': 'Unauthorized'}), 401);
-http.Response _board(String token) =>
-    http.Response(jsonEncode({'IsSuccess': true, 'StatusCode': 200, 'Data1': {'salemaster': [], 'token': token}}), 200);
+http.Response _refused() =>
+    http.Response(jsonEncode({'IsSuccess': false, 'StatusCode': 401, 'Message': 'Unauthorized'}), 401);
+http.Response _board(String token) => http.Response(
+    jsonEncode({
+      'IsSuccess': true,
+      'StatusCode': 200,
+      'Data1': {'salemaster': [], 'token': token}
+    }),
+    200);
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -44,7 +54,12 @@ void main() {
 
     final data = await JavaApiClient(client, auth).post('/api/sale-orders/tv-search', body: {});
     expect((data as Map)['token'], 't2');
-    expect(calls, ['/api/mobile/auth/login', '/api/sale-orders/tv-search', '/api/mobile/auth/refresh', '/api/sale-orders/tv-search']);
+    expect(calls, [
+      '/api/mobile/auth/login',
+      '/api/sale-orders/tv-search',
+      '/api/mobile/auth/refresh',
+      '/api/sale-orders/tv-search'
+    ]);
   });
 
   test('when the session has ended (refresh refused) it signs in again with the saved account', () async {

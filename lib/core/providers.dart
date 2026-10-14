@@ -4,6 +4,7 @@ import 'package:maleva_tv/core/config/app_config.dart';
 import 'package:maleva_tv/core/network/java_api_client.dart';
 import 'package:maleva_tv/core/session/tv_auth_controller.dart';
 import 'package:maleva_tv/core/session/tv_auth_service.dart';
+import 'package:maleva_tv/features/home/data/datasources/port_api.dart';
 import 'package:maleva_tv/features/home/data/datasources/vessel_planning_api.dart';
 
 final httpClientProvider = Provider<http.Client>((ref) {
@@ -16,6 +17,8 @@ final tvAuthServiceProvider = Provider<TvAuthService>((ref) => TvAuthService(ref
 
 final javaApiClientProvider =
     Provider<JavaApiClient>((ref) => JavaApiClient(ref.watch(httpClientProvider), ref.watch(tvAuthServiceProvider)));
+
+final portApiProvider = Provider<PortApi>((ref) => PortApi(ref.watch(javaApiClientProvider)));
 
 final vesselPlanningApiProvider =
     Provider<VesselPlanningApi>((ref) => VesselPlanningApi(ref.watch(javaApiClientProvider)));

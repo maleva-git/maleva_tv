@@ -12,16 +12,19 @@ class VesselPlanningApi {
 
   final JavaApiClient _client;
 
-  Future<List<JobModel>> boardJobs({required int companyId, required DateTime date}) =>
-      jobsBetween(companyId: companyId, from: date, to: date);
+  Future<List<JobModel>> boardJobs({required int companyId, required DateTime date, String port = ''}) =>
+      jobsBetween(companyId: companyId, from: date, to: date, port: port);
 
   /// The same search over [from]..[to], for the vessel search (a vessel due on another day).
-  Future<List<JobModel>> jobsBetween({required int companyId, required DateTime from, required DateTime to}) async {
+  /// [port] ('' for all) is sent as `search`, which the server matches against the loading port
+  /// (`SPort`) and the off-vessel port (`OPort`) - the way React's Vessel Planning port filter works.
+  Future<List<JobModel>> jobsBetween(
+      {required int companyId, required DateTime from, required DateTime to, String port = ''}) async {
     final data = await _client.post('/api/vessel-plannings/search', body: {
       'comid': companyId,
       'fromdate': _isoDate(from),
       'todate': _isoDate(to),
-      'search': '',
+      'search': port,
       'employeeid': 0,
       'etaType': 0, // ETA on either vessel
       'DeliveryDone': true, // hide delivered / closed jobs

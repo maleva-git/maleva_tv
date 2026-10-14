@@ -11,9 +11,11 @@ void main() {
     overrides: [
       jobsProvider.overrideWith((ref) async {
         final query = ref.watch(searchProvider);
-        final jobs = _sampleJobs();
+        final port = ref.watch(portFilterProvider);
+        final jobs = _sampleJobs().where((j) => port.isEmpty || j.port == port || j.offPort == port).toList();
         return query.isEmpty ? jobs : jobs.where((job) => matchesSearch(job, query)).toList();
       }),
+      portsProvider.overrideWith((ref) async => ['NORTHPORT-W5', 'PTP-J33', 'SOUTHPORT-B11', 'WESTPORT-B18']),
     ],
     child: const MaterialApp(debugShowCheckedModeBanner: false, home: MainNavigationScreen()),
   ));

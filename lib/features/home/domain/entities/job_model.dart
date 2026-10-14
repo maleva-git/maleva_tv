@@ -5,6 +5,7 @@ class JobModel {
   final String jobNo;
   final String jobStatus;
   final String jobType;
+
   /// The latest employee on the job (`EmployeeName`: LastEmployeeRefid, else EmployeeRefId).
   final String employeeName;
 

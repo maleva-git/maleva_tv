@@ -20,8 +20,10 @@ void main() {
   });
 
   test('a bad request shows the server message', () async {
-    final client = signedIn(MockClient((_) async => http.Response(answer(null, message: 'Company is required', status: 400), 400)));
+    final client = signedIn(
+        MockClient((_) async => http.Response(answer(null, message: 'Company is required', status: 400), 400)));
 
-    expect(() => client.post('/a'), throwsA(isA<ApiException>().having((e) => e.message, 'message', 'Company is required')));
+    expect(() => client.post('/a'),
+        throwsA(isA<ApiException>().having((e) => e.message, 'message', 'Company is required')));
   });
 }

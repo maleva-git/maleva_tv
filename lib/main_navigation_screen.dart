@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/board/board_theme.dart';
 import 'features/board/job_board_view.dart';
 import 'features/home/presentation/home_controller.dart';
+import 'features/home/presentation/widgets/port_picker.dart';
 
 /// The vessel planning board and the remote control.
 ///
@@ -219,6 +220,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     if (event is KeyUpEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
 
+    if (event is KeyDownEvent && key == LogicalKeyboardKey.colorF1Green) {
+      _openPortPicker();
+      return KeyEventResult.handled;
+    }
     if (event is KeyDownEvent && _searchKeys.contains(key)) {
       _openSearch();
       return KeyEventResult.handled;
@@ -304,7 +309,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               selectedIndex: _selected,
               controls: Row(children: [_modePill(), ..._keyHelp()]),
               search: search,
-              searchBar: _searchBar(search),
+              searchBar: Row(
+                children: [
+                  Expanded(child: _searchBar(search)),
+                  const SizedBox(width: 10),
+                  _portChip(),
+                ],
+              ),
             ),
           ),
         ),
@@ -413,6 +424,90 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     );
   }
 
+  // ---------- Port filter ----------
+
+  /// The green button (or a click) opens the port list; the board then shows only that port.
+  Future<void> _openPortPicker() async {
+    _takeControl();
+    final current = ref.read(portFilterProvider);
+    final picked = await showDialog<String>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder: (_) => PortPicker(current: current),
+    );
+    if (!mounted) return;
+    _focus.requestFocus();
+    if (picked == null || picked == current) return;
+    ref.read(portFilterProvider.notifier).select(picked);
+    setState(() => _selected = null);
+    if (!_searching) _resumeAuto();
+  }
+
+  Widget _portChip() {
+    final port = ref.watch(portFilterProvider);
+    final filtered = port.isNotEmpty;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        canRequestFocus: false,
+        borderRadius: BorderRadius.circular(12),
+        onTap: _openPortPicker,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 42,
+          constraints: const BoxConstraints(maxWidth: 300),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: filtered
+                ? const Color(0xFF22C55E).withValues(alpha: 0.16)
+                : BoardTheme.background.withValues(alpha: 0.7),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: filtered ? const Color(0xFF4ADE80) : BoardTheme.border, width: 1.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.anchor_rounded,
+                  size: 20, color: filtered ? const Color(0xFF4ADE80) : BoardTheme.textSecondary),
+              const SizedBox(width: 8),
+              Flexible(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('PORT',
+                        style: TextStyle(
+                            fontSize: 9, fontWeight: FontWeight.w800, color: BoardTheme.textMuted, letterSpacing: 1.4)),
+                    Flexible(
+                      child: Text(
+                        filtered ? port.toUpperCase() : 'ALL PORTS',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: BoardTheme.textPrimary,
+                            letterSpacing: 0.8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // the remote's green button opens the list
+              Container(
+                width: 10,
+                height: 10,
+                decoration: const BoxDecoration(color: Color(0xFF22C55E), shape: BoxShape.circle),
+              ),
+              const Icon(Icons.arrow_drop_down_rounded, size: 22, color: BoardTheme.textSecondary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   // ---------- Mode and remote help (shown in the board's footer) ----------
 
   Widget _modePill() {
@@ -488,6 +583,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           'PAGE'),
       key(icons(Icons.keyboard_arrow_left_rounded, Icons.keyboard_arrow_right_rounded), 'CHANGE DATE'),
       key(const Icon(Icons.search_rounded, size: 13, color: BoardTheme.textPrimary), 'MENU / BLUE: SEARCH'),
+      key(const Icon(Icons.circle, size: 10, color: Color(0xFF22C55E)), 'GREEN: PORT'),
       key(const Text('OK', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: BoardTheme.textPrimary)),
           _auto ? 'PAUSE' : 'BACK TO AUTO'),
     ];

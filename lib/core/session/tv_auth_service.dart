@@ -31,13 +31,13 @@ class SignInRequired implements Exception {
 /// server ends the session (30 days) the TV signs in again with the saved account. There is no sign-out.
 class TvAuthService {
   TvAuthService(this._http, {FlutterSecureStorage? storage, String? baseUrl, TvSession? session})
-      : _storage = storage ?? _defaultStorage,
+      : _storage = storage ?? defaultStorage,
         _baseUrl = baseUrl ?? AppConfig.javaBaseUrl,
         _session = session;
 
   /// Android: the Keystore. macOS: the classic keychain, which works for an app signed without an Apple
   /// team (the data-protection keychain refuses it: -34018). Windows: its own encrypted credential store.
-  static const _defaultStorage = FlutterSecureStorage(mOptions: MacOsOptions(usesDataProtectionKeychain: false));
+  static const defaultStorage = FlutterSecureStorage(mOptions: MacOsOptions(usesDataProtectionKeychain: false));
 
   static const _kUser = 'tv.userName';
   static const _kPassword = 'tv.password';

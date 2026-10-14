@@ -4,7 +4,8 @@ import 'package:http/http.dart' as http;
 
 import 'api_exception.dart';
 
-/// Reads the common Java answer `{IsSuccess, StatusCode, Message, Data1}`.
+/// Reads the common Java answer `{IsSuccess, StatusCode, Message, Data1}` (some modules, such as the
+/// port masters, answer `{success, statusCode, message, data}`).
 class JavaAnswer {
   JavaAnswer._();
 
@@ -13,7 +14,7 @@ class JavaAnswer {
     final body = _decode(response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       if (body is Map<String, dynamic>) {
-        return body['Data1'] ?? body['Data'];
+        return body['Data1'] ?? body['Data'] ?? body['data'];
       }
       return body;
     }

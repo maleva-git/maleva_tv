@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:maleva_tv/features/board/board_theme.dart';
+import 'package:maleva_tv/features/home/data/datasources/port_api.dart';
 import 'package:maleva_tv/features/home/data/datasources/vessel_planning_api.dart';
 
 import 'fakes.dart';
@@ -80,5 +81,39 @@ void main() {
     final body = jsonDecode(sent.single.body) as Map<String, dynamic>;
     expect(body['fromdate'], '2026-10-07');
     expect(body['todate'], '2026-11-13');
+  });
+
+  test('a port filter is sent as search, like React\'s Vessel Planning port filter', () async {
+    final (vp, sent) = await api('[]');
+
+    await vp.boardJobs(companyId: 6, date: DateTime(2026, 10, 14), port: 'WESTPORT-B18');
+
+    expect((jsonDecode(sent.single.body) as Map)['search'], 'WESTPORT-B18');
+  });
+
+  test('the port list comes from the active port masters, without blanks or repeats, A-Z', () async {
+    late http.Request sent;
+    final client = signedIn(MockClient((r) async {
+      sent = r;
+      return http.Response(
+          jsonEncode({
+            'success': true,
+            'statusCode': 200,
+            'message': 'Active ports retrieved successfully',
+            'data': [
+              {'id': 1, 'portName': 'WESTPORT-B18'},
+              {'id': 2, 'portName': ' SOUTHPORT-B11 '},
+              {'id': 3, 'portName': ''},
+              {'id': 4, 'portName': 'WESTPORT-B18'},
+            ],
+          }),
+          200);
+    }));
+
+    final ports = await PortApi(client).activePorts(6);
+
+    expect(sent.method, 'GET');
+    expect(sent.url.path, '/api/port-masters/company/6/active');
+    expect(ports, ['SOUTHPORT-B11', 'WESTPORT-B18']);
   });
 }
