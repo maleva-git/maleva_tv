@@ -1,0 +1,36 @@
+# Builds the Windows desktop app on GitHub's Windows computers (a Mac cannot build it).
+# Runs on every push to main, or by hand: Actions tab -> "Build Windows app" -> Run workflow.
+# The result is a zip under the run's "Artifacts": unzip it on a PC and start maleva_tv.exe.
+name: Build Windows app
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: 3.47.5 # same as the Mac
+          cache: true
+
+      - run: flutter pub get
+      - run: flutter test
+      - run: flutter build windows --release
+
+      # The .exe needs the .dll files and the data folder next to it, so the whole folder is shipped.
+      - name: Zip the app
+        shell: pwsh
+        run: Compress-Archive -Path build/windows/x64/runner/Release/* -DestinationPath Maleva-Vessel-Board-Windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Maleva-Vessel-Board-Windows
+          path: Maleva-Vessel-Board-Windows.zip
+          retention-days: 30

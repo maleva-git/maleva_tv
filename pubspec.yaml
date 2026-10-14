@@ -1,0 +1,48 @@
+name: maleva_tv
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.3.0+27
+
+environment:
+  sdk: '>=3.5.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.5.1
+  http: ^1.2.1
+  google_fonts: ^6.2.1
+  fluttertoast: ^8.2.4
+  intl: ^0.19.0
+  url_launcher: ^6.3.0
+  flutter_secure_storage: ^10.3.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/company/logo.png"
+  
+  # Mobile Adaptive Icons
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/company/logo.png"
+  
+  # Android TV Specific
+  android_tv_banner: "assets/company/logo.png"
+  android_tv_icon: "assets/company/logo.png"
+
+  # iOS
+  image_path_ios: "assets/company/logo.png"
+  remove_alpha_ios: true
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/company/

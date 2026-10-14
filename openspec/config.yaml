@@ -1,0 +1,7 @@
+schema: spec-driven
+
+context: |
+  maleva_tv is the Android TV board (Flutter) that shows today's and tomorrow's sale orders.
+  It reads the shared Java backend the React web app and maleva_app use (workspace CLAUDE.md,
+  owner's rule 2026-10-02): adapt the TV app to the Java answers, never reshape a backend API for it.
+  Keep production credentials, tokens and response dumps out of artifacts.
