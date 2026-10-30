@@ -62,6 +62,27 @@ void main() {
     ]);
   });
 
+  test('a 403 (an expired token on a board API outside /api/mobile) also refreshes and repeats', () async {
+    final calls = <String>[];
+    final client = MockClient((r) async {
+      calls.add(r.url.path);
+      if (r.url.path.endsWith('/login')) return _session('t1');
+      if (r.url.path.endsWith('/refresh')) return _session('t2');
+      return r.headers['Authorization'] == 'Bearer t2' ? _board('t2') : http.Response('', 403);
+    });
+    final auth = TvAuthService(client);
+    await auth.signIn('tv', 'pw');
+
+    final data = await JavaApiClient(client, auth).post('/api/vessel-plannings/search', body: {});
+    expect((data as Map)['token'], 't2');
+    expect(calls, [
+      '/api/mobile/auth/login',
+      '/api/vessel-plannings/search',
+      '/api/mobile/auth/refresh',
+      '/api/vessel-plannings/search'
+    ]);
+  });
+
   test('when the session has ended (refresh refused) it signs in again with the saved account', () async {
     var logins = 0;
     final client = MockClient((r) async {

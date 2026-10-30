@@ -11,7 +11,7 @@ import 'api_exception.dart';
 import 'java_answer.dart';
 
 /// The HTTP client for the Java backend. Like maleva_app it sends the employee token
-/// (`Authorization: Bearer`); on a 401 it renews the session once and repeats the call.
+/// (`Authorization: Bearer`); on a 401 or 403 it renews the session once and repeats the call.
 class JavaApiClient {
   JavaApiClient(this._http, this._auth, {String? baseUrl}) : _baseUrl = baseUrl ?? AppConfig.javaBaseUrl;
 
@@ -34,7 +34,9 @@ class JavaApiClient {
     try {
       return await call(session.token);
     } on ApiException catch (e) {
-      if (e.statusCode != 401) rethrow;
+      // The board APIs (outside /api/mobile) answer an expired token with 403, not 401, so both
+      // renew. A 403 that comes back with a fresh token is real and reaches the screen.
+      if (e.statusCode != 401 && e.statusCode != 403) rethrow;
       final renewed = await _auth.renew();
       return call(renewed.token);
     }
