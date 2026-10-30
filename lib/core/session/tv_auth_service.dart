@@ -91,6 +91,14 @@ class TvAuthService {
     return _save(session);
   }
 
+  /// Signs out by hand (the SIGN OUT button): forgets the token and the password, keeps the user name
+  /// so the sign-in screen is filled in. The next start shows the sign-in screen.
+  Future<void> signOut() async {
+    _session = null;
+    await _storage.delete(key: _kToken);
+    await _storage.delete(key: _kPassword);
+  }
+
   /// A new token after a 401: refresh first, then sign in again with the saved account.
   /// Calls made while a renewal runs share it.
   Future<TvSession> renew() => _renewing ??= _renew().whenComplete(() => _renewing = null);

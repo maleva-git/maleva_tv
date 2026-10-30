@@ -6,7 +6,10 @@ import 'package:maleva_tv/features/board/board_theme.dart';
 void main() {
   tearDown(() => BoardTheme.palette = BoardPalette.navy);
 
-  for (final (name, palette) in [('Planning (light)', BoardPalette.malevaLight), ('Vessel Planning (navy)', BoardPalette.navy)]) {
+  for (final (name, palette) in [
+    ('Planning (light)', BoardPalette.malevaLight),
+    ('Vessel Planning (navy)', BoardPalette.navy)
+  ]) {
     testWidgets('$name: headings are white on the header bar', (tester) async {
       BoardTheme.palette = palette;
       await tester.pumpWidget(MaterialApp(

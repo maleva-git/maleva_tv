@@ -83,6 +83,17 @@ void main() {
     ]);
   });
 
+  test('signing out forgets the token and password but keeps the user name', () async {
+    final client = MockClient((r) async => _session('t1'));
+    final auth = TvAuthService(client);
+    await auth.signIn('tv', 'pw');
+
+    await auth.signOut();
+    expect(auth.session, isNull);
+    expect(await auth.savedUserName(), 'tv');
+    expect(await TvAuthService(client).restore(), isNull); // the next start shows the sign-in screen
+  });
+
   test('when the session has ended (refresh refused) it signs in again with the saved account', () async {
     var logins = 0;
     final client = MockClient((r) async {

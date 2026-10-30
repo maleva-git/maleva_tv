@@ -51,6 +51,12 @@ class TvAuthController extends StateNotifier<TvAuthState> {
     }
   }
 
+  /// The SIGN OUT button: back to the sign-in screen, with the user name filled in.
+  Future<void> signOut() async {
+    await _service.signOut();
+    state = SignedOut(userName: await _service.savedUserName());
+  }
+
   /// Throws [ApiException] with the server's message when the sign-in is refused.
   Future<void> signIn(String userName, String password) async {
     state = SignedIn(await _service.signIn(userName.trim(), password));

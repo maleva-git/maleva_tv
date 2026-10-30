@@ -143,4 +143,34 @@ void main() {
     expect(board(tester).selectedIndex, isNull);
     await close(tester);
   });
+
+  testWidgets('holding OK for 2 s asks to sign out; a short OK still works as before', (tester) async {
+    await open(tester);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.select);
+    await tester.pump(const Duration(milliseconds: 2100));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Sign out?'), findsOneWidget);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.select);
+    await tester.pump();
+    expect(find.text('Sign out?'), findsOneWidget); // letting go does not sign out
+
+    await tester.tap(find.text('CANCEL'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+    expect(find.text('Sign out?'), findsNothing);
+
+    await press(tester, LogicalKeyboardKey.escape); // back to auto
+    await press(tester, LogicalKeyboardKey.select); // short OK: pause, as before
+    expect(board(tester).autoPlay, isFalse);
+    expect(find.text('Sign out?'), findsNothing);
+    await close(tester);
+  });
+
+  testWidgets('the footer SIGN OUT asks first', (tester) async {
+    await open(tester);
+    await tester.tap(find.textContaining('SIGN OUT'));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Sign out?'), findsOneWidget);
+    await close(tester);
+  });
 }

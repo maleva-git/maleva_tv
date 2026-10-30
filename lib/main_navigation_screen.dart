@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'core/session/tv_auth_controller.dart';
 import 'features/board/board_theme.dart';
 import 'features/board/job_board_view.dart';
 import 'features/home/presentation/home_controller.dart';
@@ -18,7 +19,8 @@ import 'features/planning/truck_summary.dart';
 /// Remote: ▲▼ stops auto mode and moves a highlight over the rows (▲ on the first row jumps to the
 /// last); CH± / ⏪⏩ / Page Up/Down jump a page; ◀▶ change the day;
 /// OK, Back or ⏯ go back to auto mode, which also comes back by itself after [_idleResume]
-/// without a key press.
+/// without a key press. Holding OK for 2 s (or the Info / Settings key, or a click on the footer's
+/// SIGN OUT) asks to sign out.
 /// Search: typing a letter (or the search / menu key) opens the vessel search; results show live,
 /// ▼ moves into them, Back clears the search, and it closes by itself after [_searchIdle].
 class MainNavigationScreen extends ConsumerStatefulWidget {
@@ -90,6 +92,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     _apiRefreshTimer?.cancel();
     _idleTimer?.cancel();
     _tick?.cancel();
+    _okTimer?.cancel();
     _debounce?.cancel();
     _live?.stop();
     _query.dispose();
@@ -267,9 +270,51 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     LogicalKeyboardKey.mediaTrackPrevious,
   };
 
+  /// OK acts when it is let go, so holding it can ask to sign out instead.
+  static final _okKeys = {
+    LogicalKeyboardKey.select,
+    LogicalKeyboardKey.enter,
+    LogicalKeyboardKey.numpadEnter,
+    LogicalKeyboardKey.gameButtonA,
+  };
+  static const _okHold = Duration(seconds: 2);
+  static final _signOutKeys = {LogicalKeyboardKey.info, LogicalKeyboardKey.settings, LogicalKeyboardKey.f10};
+  Timer? _okTimer;
+  bool _okHeld = false;
+
+  KeyEventResult _onOk(KeyEvent event) {
+    if (event is KeyDownEvent) {
+      _okHeld = false;
+      _okTimer?.cancel();
+      _okTimer = Timer(_okHold, () {
+        _okHeld = true;
+        if (mounted) _confirmSignOut();
+      });
+    } else if (event is KeyUpEvent && _okTimer != null) {
+      _okTimer!.cancel();
+      _okTimer = null;
+      if (!_okHeld) _okPressed();
+    }
+    return KeyEventResult.handled;
+  }
+
+  void _okPressed() {
+    if (_auto && ref.read(boardProvider) == BoardKind.planning) {
+      // Planning: OK starts or stops the scrolling
+      ref.read(planningScrollProvider.notifier).toggle();
+    } else {
+      _auto ? _takeControl() : _resumeAuto();
+    }
+  }
+
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
-    if (event is KeyUpEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
+    if (_okKeys.contains(key)) return _onOk(event);
+    if (event is KeyUpEvent) return KeyEventResult.ignored;
+    if (event is KeyDownEvent && _signOutKeys.contains(key)) {
+      _confirmSignOut();
+      return KeyEventResult.handled;
+    }
 
     if (event is KeyDownEvent && (key == LogicalKeyboardKey.colorF2Yellow || key == LogicalKeyboardKey.tab)) {
       _switchBoard();
@@ -323,19 +368,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       _changeDate(key == LogicalKeyboardKey.arrowRight ? 1 : -1);
       return KeyEventResult.handled;
     }
-    if (event is KeyDownEvent &&
-        (key == LogicalKeyboardKey.select ||
-            key == LogicalKeyboardKey.enter ||
-            key == LogicalKeyboardKey.numpadEnter ||
-            key == LogicalKeyboardKey.gameButtonA ||
-            key == LogicalKeyboardKey.mediaPlayPause ||
-            key == LogicalKeyboardKey.mediaPlay)) {
-      if (_auto && ref.read(boardProvider) == BoardKind.planning) {
-        // Planning: OK starts or stops the scrolling
-        ref.read(planningScrollProvider.notifier).toggle();
-      } else {
-        _auto ? _takeControl() : _resumeAuto();
-      }
+    if (event is KeyDownEvent && (key == LogicalKeyboardKey.mediaPlayPause || key == LogicalKeyboardKey.mediaPlay)) {
+      _okPressed();
       return KeyEventResult.handled;
     }
     if (event is KeyDownEvent && (key == LogicalKeyboardKey.mediaPause || key == LogicalKeyboardKey.mediaStop)) {
@@ -355,6 +389,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       _modePill(),
       if (board == BoardKind.planning) ...[const SizedBox(width: 10), _livePill()],
       ..._keyHelp(),
+      _signOutChip(),
     ]);
     final searchBar = Row(
       children: [
@@ -596,6 +631,81 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   }
 
   // ---------- Truck details (Planning) ----------
+
+  // ---------- Sign out ----------
+
+  /// Asks before signing out; CANCEL has the focus, so a stray OK does nothing.
+  Future<void> _confirmSignOut() async {
+    _takeControl();
+    final user = switch (ref.read(tvAuthProvider)) { SignedIn(:final session) => session.userName, _ => '' };
+    final yes = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.6),
+      builder: (context) => AlertDialog(
+        backgroundColor: BoardTheme.panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: BoardTheme.border, width: 1.5),
+        ),
+        title: Text('Sign out?',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: BoardTheme.textPrimary)),
+        content: Text(
+          user.isEmpty
+              ? 'The board closes and asks for a sign-in.'
+              : 'Signed in as ${user.toUpperCase()}.\nThe board closes and asks for a sign-in.',
+          style: TextStyle(fontSize: 16, color: BoardTheme.textSecondary, height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            autofocus: true,
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text('CANCEL', style: TextStyle(fontWeight: FontWeight.w800, color: BoardTheme.textSecondary)),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: BoardTheme.danger),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('SIGN OUT', style: TextStyle(fontWeight: FontWeight.w900, color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (yes == true) {
+      await ref.read(tvAuthProvider.notifier).signOut();
+    } else {
+      _focus.requestFocus();
+    }
+  }
+
+  /// The footer's small sign-out: who is signed in, and a click (or OK held 2 s) to sign out.
+  Widget _signOutChip() {
+    final user = switch (ref.watch(tvAuthProvider)) { SignedIn(:final session) => session.userName, _ => '' };
+    return Padding(
+      padding: const EdgeInsets.only(left: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          canRequestFocus: false,
+          borderRadius: BorderRadius.circular(10),
+          onTap: _confirmSignOut,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: BoardTheme.border),
+            ),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(Icons.logout_rounded, size: 12, color: BoardTheme.textSecondary),
+              const SizedBox(width: 4),
+              Text(user.isEmpty ? 'SIGN OUT · HOLD OK' : '${user.toUpperCase()} · SIGN OUT · HOLD OK',
+                  style: TextStyle(
+                      fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 1, color: BoardTheme.textSecondary)),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
 
   Future<void> _openTruckDetails() async {
     _takeControl();
